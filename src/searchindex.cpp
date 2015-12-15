@@ -832,8 +832,11 @@ void writeJavascriptSearchIndex()
   // index classes
   ClassSDict::Iterator cli(*Doxygen::classSDict);
   ClassDef *cd;
+  int count=Doxygen::classSDict->count();
   for (;(cd=cli.current());++cli)
   {
+ //   QCString nn=cd->name();
+ //  if(nn.isEmpty()) continue;
     uchar charCode = (uchar)cd->localName().at(0);
     uint letter = charCode<128 ? tolower(charCode) : charCode;
     if (cd->isLinkable() && isId(letter))

@@ -6,7 +6,7 @@
  * documentation under the terms of the GNU General Public License is hereby 
  * granted. No representations are made about the suitability of this software 
  * for any purpose. It is provided "as is" without express or implied warranty.
- * See the GNU General Public License for more details.
+ * See the GNU General Public    License for more details.
  *
  * Documents produced by Doxygen are derivative works derived from the
  * input used in their production; they are not affected by this license.
@@ -382,19 +382,19 @@ t_ToolDir
 %type<qstr>  sel_wavefrms_1 sel_wavefrms_2 gen_stat1 block_declarative_part end_stats inout_stat
 %type<qstr> selected_signal_assignment comp_inst_stat                                             
  %type<qstr> conditional_signal_assignment selected_variable_assignment conditional_variable_assignment 
- %type<qstr> subprog_decltve_item subprog_body_3 subprog_body_1 procs_stat1_2
+ %type<qstr> subprog_decltve_item subprog_body_3 subprog_body_1 procs_stat1_2 gen_assoc
 
-%debug
+//%debug
 
 // for debugging set yydebug=1
-%initial-action { yydebug=0; }
+//%initial-action { yydebug=0; }
 
 %expect 2
 
 // minimum bison version
 //%required "2.2"
 
-
+//%verbose
 
 %%
 start: design_file 
@@ -470,8 +470,16 @@ use_clause : t_USE sel_list t_Semicolon
                    QStringList ql1=QStringList::split(",",$2,FALSE);
                    for (uint j=0;j<ql1.count();j++)
                    {
-                     //QStringList ql=QStringList::split(".",ql1[j],FALSE);
-                     QCString it=ql1[j].utf8();
+                     QStringList ql=QStringList::split(".",ql1[j],FALSE);
+                     QCString it;
+                     for(uint j=0; j<ql.count();j++)
+                    {
+                     it=ql[j].utf8();
+                     if(it=="all")
+                     break;
+                    }
+                    
+           
                      if ( parse_sec==0 && Config_getBool("SHOW_INCLUDE_FILES") )
                      {
                        addVhdlType(it,getParsedLine(t_USE),Entry::VARIABLE_SEC,VhdlDocGen::USE,it.data(),"_use_");
@@ -875,13 +883,18 @@ association_list:   t_LeftParen association_element association_list_1 t_RightPa
 association_list_1:  /* empty */                           { $$=""; }
 association_list_1: association_list_1 association_list_2  { $$=$1+" "+$2; }
 association_list_2: t_Comma association_element            { $$=", "+$2; }
+// VHDL '93 range_constraint ::= range range
+//gen_association_list : gen_assoc gen_assoc { $$=$1+$2;}
+                                
+gen_association_list : gen_assoc { $$=$1; }
 
-gen_association_list : t_LeftParen gen_association_element gen_association_list_1 t_RightParen
-    {
-      QCString str="( "+$2+$3;
-      str.append(" )");
-      $$=str;
-    }
+ gen_assoc:  t_LeftParen gen_association_element gen_association_list_1 t_RightParen 
+       {
+        QCString str="("+$2+$3;
+        str.append(")");
+        $$=str;
+       }
+
 gen_association_list: t_LeftParen  error t_RightParen { $$=""; }
 gen_association_list: t_LeftParen t_OPEN t_RightParen { $$=" ( open ) "; }
 
@@ -1073,7 +1086,7 @@ type_decl: t_TYPE t_Identifier type_decl_1 t_Semicolon
 type_decl: t_TYPE error t_Semicolon { $$=""; }
 
 type_decl_1:  /* empty */           { $$=""; }
-type_decl_1: t_IS type_definition   { $$=" is "+$2; }
+type_decl_1: t_IS type_definition   { $$="  "+$2; }
 
 type_definition: enumeration_type_definition    { $$=$1; }
 type_definition: range_constraint               { $$=$1; }
@@ -1170,10 +1183,10 @@ subtype_indic:    mark subtype_indic_1          { $$=$1+" "+$2; }
 subtype_indic:    subtype_indic1                { $$=$1; }
 subtype_indic_1:  /* empty */                   { $$=""; }
 subtype_indic_1:  gen_association_list          { $$=$1; }
-
+// have to make changes here 
 subtype_indic1:   mark mark range_constraint    { $$=$1+" "+$2+" "+$3; }
 subtype_indic1:   mark range_constraint         { $$=$1+" "+$2; }
-subtype_indic1:   mark mark subtype_indic1_1    { $$=$1+" "+$2+" "+$3; }
+subtype_indic1:   mark mark subtype_indic1_1  //  { $$=$1+" "+$2+" "+$3; }
 subtype_indic1_1:  /* empty */                  { $$=""; }
 subtype_indic1_1: gen_association_list          { $$=$1; }
 
@@ -2265,8 +2278,8 @@ extern YYSTYPE vhdlScanYYlval;
 
 void vhdlScanYYerror(const char* /*str*/)
 {
-  // fprintf(stderr,"\n<---error at line %d  : [ %s]   in file : %s ---->",s_str.yyLineNr,s_str.qstr.data(),s_str.fileName);
-  //  exit(0);
+   fprintf(stderr,"\n<---error at line %d  : [ %s]   in file : %s ---->",s_str.yyLineNr,s_str.qstr.data(),s_str.fileName);
+    exit(0);
 }
 
 void vhdlParse()
@@ -2541,10 +2554,10 @@ static void addVhdlType(const QCString &name,int startLine,int section,
     if (current->args.isEmpty())
     {
       current->args=args;
-      current->args.replace(reg,"%"); // insert dummy chars because wihte spaces are removed
+//      current->args.replace(reg,"%"); // insert dummy chars because wihte spaces are removed
     }
     current->type=type;
-    current->type.replace(reg,"%"); // insert dummy chars because white spaces are removed
+//    current->type.replace(reg,"%"); // insert dummy chars because white spaces are removed
     current->protection=prot;
  
        if (!lastCompound && (section==Entry::VARIABLE_SEC) &&  (spec == VhdlDocGen::USE || spec == VhdlDocGen::LIBRARY) )

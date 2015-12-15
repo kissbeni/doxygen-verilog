@@ -47,7 +47,7 @@
 #include "classlist.h"
 #include "namespacedef.h"
 #include "filename.h"
-
+#include "verilogdocgen.h"
 #define MAX_ITEMS_BEFORE_MULTIPAGE_INDEX 200
 #define MAX_ITEMS_BEFORE_QUICK_INDEX 30
 
@@ -2277,7 +2277,10 @@ void addClassMemberNameToIndex(MemberDef *md)
   static bool hideFriendCompounds = Config_getBool("HIDE_FRIEND_COMPOUNDS");
   ClassDef *cd=0;
 
- 
+   if ( md->getLanguage()==SrcLangExt_VERILOG) // &&  (VhdlDocGen::isRecord(md) || VhdlDocGen::isUnit(md)))
+  {
+    VerilogDocGen::adjustMemberName(md);
+  }
   
   if (md->isLinkableInProject() && 
       (cd=md->getClassDef())    && 

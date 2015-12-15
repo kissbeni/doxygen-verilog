@@ -1652,7 +1652,9 @@ static const char virtualScope[] = { 'v', 'i', 'r', 't', 'u', 'a', 'l', ':' };
 QCString removeRedundantWhiteSpace(const QCString &s)
 {
   static bool cliSupport = Config_getBool("CPP_CLI_SUPPORT");
-  if (s.isEmpty()) return s;
+  static bool vhdl = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+   
+  if (s.isEmpty() || vhdl) return s;
   static GrowBuf growBuf;
   //int resultLen = 1024;
   //int resultPos = 0;
@@ -6684,6 +6686,9 @@ g_lang2extMap[] =
   { "dbusxml",     "dbusxml", SrcLangExt_XML      },
   { "tcl",         "tcl",     SrcLangExt_Tcl      },
   { "md",          "md",      SrcLangExt_Markdown },
+    { "ucf",        "v",    SrcLangExt_VERILOG   },
+  { "qsf",        "v",    SrcLangExt_VERILOG   },
+  { "v",        "v",    SrcLangExt_VERILOG    },
   { 0,             0,        (SrcLangExt)0        }
 };
 
@@ -6747,10 +6752,11 @@ void initDefaultExtensionMapping()
   updateLanguageMapping(".for",      "fortran");
   updateLanguageMapping(".f90",      "fortran");
   updateLanguageMapping(".vhd",      "vhdl");
+  updateLanguageMapping(".v",     "v");
   updateLanguageMapping(".vhdl",     "vhdl");
   updateLanguageMapping(".tcl",      "tcl");
-  updateLanguageMapping(".ucf",      "vhdl");
-  updateLanguageMapping(".qsf",      "vhdl");
+  updateLanguageMapping(".ucf",      "v");
+  updateLanguageMapping(".qsf",      "v");
   updateLanguageMapping(".md",       "md");
   updateLanguageMapping(".markdown", "md");
 

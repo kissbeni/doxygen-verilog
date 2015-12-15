@@ -1370,6 +1370,7 @@ void Config::check()
     filePatternList.append("*.vhd");
     filePatternList.append("*.vhdl");
     filePatternList.append("*.tcl");
+     filePatternList.append("*.v");
     filePatternList.append("*.md");
     filePatternList.append("*.markdown");
     if (portable_fileSystemIsCaseSensitive())
@@ -1394,6 +1395,7 @@ void Config::check()
       filePatternList.append("*.VHD");
       filePatternList.append("*.VHDL");
       filePatternList.append("*.TCL");
+       filePatternList.append("*.V");
       filePatternList.append("*.MD");
       filePatternList.append("*.MARKDOWN");
     }
@@ -1510,6 +1512,10 @@ void Config::check()
     annotationFromBrief.append("an");
     annotationFromBrief.append("the");
   }
+  if (Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  {
+   Config_getBool("OPTIMIZE_OUTPUT_VHDL")       = TRUE;
+  }
 
   // some default settings for vhdl
   if (Config_getBool("OPTIMIZE_OUTPUT_VHDL") && 
@@ -1547,6 +1553,11 @@ void Config::check()
     Config_getBool("ENABLE_PREPROCESSING")  = FALSE;
     Config_getBool("EXTRACT_PACKAGE")       = TRUE;
   }                               
+ if (Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  {
+   Config_getBool("ENABLE_PREPROCESSING")  = TRUE;
+  }
+  
 
   checkFileName("GENERATE_TAGFILE");
 }

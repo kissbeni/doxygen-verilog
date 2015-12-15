@@ -44,6 +44,7 @@
 #include "namespacedef.h"
 #include "filedef.h"
 #include "config.h"
+#include "verilogdocgen.h"
 
 //-----------------------------------------------------------------------------
 
@@ -651,11 +652,24 @@ void MemberDefImpl::init(Definition *def,
   if (mt==MemberType_Typedef) type.stripPrefix("typedef ");
   //  type.stripPrefix("struct ");
   //  type.stripPrefix("class " );
-  //  type.stripPrefix("union " );
+  // type.stripPrefix("union " );
   type=removeRedundantWhiteSpace(type);
   args=a;
   args=removeRedundantWhiteSpace(args);
-  if (type.isEmpty()) decl=def->name()+args; else decl=type+" "+def->name()+args;
+  if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  {
+  QCString nn=def->name();
+  VerilogDocGen::adjustOpName(nn);
+  if (type.isEmpty()) decl=nn+" "+args; else decl=args+" "+nn+" "+type; 
+  }
+else
+ {
+  if (type.isEmpty()) 
+    decl=def->name()+" "+args; 
+      else 
+      decl=type+" "+def->name()+" "+args;
+}
+
 
   memberGroup=0;
   virt=v;
@@ -1919,7 +1933,7 @@ void MemberDef::_getLabels(QStrList &sl,Definition *container) const
     //ol.startTypewriter();
     //ol.docify(" [");
     SrcLangExt lang = getLanguage();
-    bool optVhdl = lang==SrcLangExt_VHDL;
+    bool optVhdl =( lang==SrcLangExt_VHDL || lang==SrcLangExt_VERILOG);
     if (optVhdl)
     {
       sl.append(VhdlDocGen::trTypeString(getMemberSpecifiers()));
@@ -2380,7 +2394,7 @@ void MemberDef::writeDocumentation(MemberList *ml,OutputList &ol,
 
   SrcLangExt lang = getLanguage();
   //printf("member=%s lang=%d\n",name().data(),lang);
-  bool optVhdl = lang==SrcLangExt_VHDL;
+  bool optVhdl =( lang==SrcLangExt_VHDL || lang==SrcLangExt_VERILOG);
   QCString sep = getLanguageSpecificSeparator(lang,TRUE);
 
   QCString scopeName = scName;

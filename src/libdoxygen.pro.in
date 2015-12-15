@@ -169,10 +169,16 @@ HEADERS      =	arguments.h \
 		types.h \
 		unistd.h \
 		util.h \
+		verilogscanner.h \
+		verilogdocgen.h \
+		verilogparser.hpp \
 		version.h \
+		VFileLine.h \
 		vhdlcode.h \
 		vhdldocgen.h \
 		vhdlscanner.h \
+		VPreLex.h \
+		VPreProc.h \
 		xmldocvisitor.h \
                 xmlgen.h \
                 docbookvisitor.h \
@@ -262,10 +268,16 @@ SOURCES      =	arguments.cpp \
                 tooltip.cpp \
 		util.cpp \
 		version.cpp \
+		verilogscanner.cpp \
+		verilogparser.cpp \
+		verilogdocgen.cpp \
+		VFileLine.cpp \
 		vhdlcode.cpp \
 		vhdldocgen.cpp \
 		vhdlparser.cpp \
 		vhdlscanner.cpp \
+		VPreLex.cpp \
+		VPreProc.cpp \
 		xmldocvisitor.cpp \
                 xmlgen.cpp \
                 docbookvisitor.cpp \

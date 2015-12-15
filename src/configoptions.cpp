@@ -374,7 +374,21 @@ void addConfigOptions(Config *cfg)
               "The default value is: NO.",
               FALSE
              );
+    //----
+    cb = cfg->addBool(
+                  "OPTIMIZE_OUTPUT_VERILOG",
+                    "Set the OPTIMIZE_OUTPUT_VERILOG tag to YES if your project consists of Verilog \n"
+                    "sources. Doxygen will then generate output that is tailored for \n"
+					"Verilog. \n",
+                    FALSE
+                 );          
   //----
+   cb = cfg->addBool(
+                  "HIDE_PORT",
+                    "Set the HIDE_PORT tag to YES Verilog ports are not shown  \n",
+                    TRUE
+                 );  
+ //----
   cl = cfg->addList(
               "EXTENSION_MAPPING",
               "Doxygen selects the parser to use depending on the extension of the files it\n"
