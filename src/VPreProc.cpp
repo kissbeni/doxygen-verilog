@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //*************************************************************************
 //
-// Copyright 2000-2013 by Wilson Snyder.  This program is free software;
+// Copyright 2000-2015 by Wilson Snyder.  This program is free software;
 // you can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
 //
@@ -31,6 +31,7 @@
 #include <cassert>
 #include <cerrno>
 #include "qcstring.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -38,18 +39,18 @@
 #include "qcstring.h"
 #include "qregexp.h"
 #include "verilogdocgen.h"
+
 #if defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
 # include <io.h>
 #else
 # include <unistd.h>
 #endif
+
 #include "vhdldocgen.h"
 #include "VPreProc.h"
 #include "VPreLex.h"
 #include "define.h"
-//#include "preVerilog.h"
 #include "qfile.h"
-
 
 static string sbuffer;
 static string relBuffer;
@@ -59,7 +60,6 @@ static bool bEnable=false;
 //#include <FlexLexer.h>
 
 //*************************************************************************
-
 
 DefineDict *VerilogPreProc::g_fileDefineDict;
 DefineDict *VerilogPreProc::g_preDefineDict;
@@ -94,19 +94,11 @@ class VPreIfEntry {
     // One for each pending ifdef/ifndef
     bool	m_on;		// Current parse for this ifdef level is "on"
     bool	m_everOn;	// Some if term in elsif tree has been on
-   
 public:
     bool on() const { return m_on; }
     bool everOn() const { return m_everOn; }
     VPreIfEntry(bool on, bool everOn)
-	: m_on(on), m_everOn(everOn || on)  
-	{
-	ifName="--XX--";
-	int line=0;
-	}
-	
-	  // Note everOn includes new state
-    
+	: m_on(on), m_everOn(everOn || on) {ifName="--XX--"; int line=0;}  // Note everOn includes new state
     VPreIfEntry(bool on, bool everOn,string ifn,int i)
     {
     m_on=on;
@@ -122,9 +114,10 @@ public:
 //*************************************************************************
 /// Data for a preprocessor instantiation.
 
-struct VPreProcImp : public VPreProcOpaque {
+class VPreProcImp : public VPreProcOpaque {
+public:
     typedef list<string> StrList;
-     int getNextStateToken(string & buf);
+    int getNextStateToken(string & buf);
     VPreProc*	m_preprocp;	///< Object we're holding data for
     int		m_debug;	///< Debugging level
     VPreLex*	m_lexp;		///< Current lexer state (NULL = closed)
@@ -178,9 +171,7 @@ struct VPreProcImp : public VPreProcOpaque {
     string	m_lineChars;	///< Characters left for next line
 
     QCString m_QC;
- 
     string relString;
-
     VPreProcImp() {
 	m_debug = 0;
 	m_states.push(ps_TOP);
@@ -222,9 +213,7 @@ struct VPreProcImp : public VPreProcOpaque {
     void debugToken(int tok, const char* cmtp);
     void parseTop();
     void parseUndef();
-    
     string getparseline(bool stop_at_eol, size_t approx_chunk);
-     
     bool isEof() const { return m_lexp->curStreamp()->m_eof; }
     bool readWholefile(const string& filename, StrList& outl);
     void openFile(string filename, VFileLine* filelinep);
@@ -291,7 +280,7 @@ VPreProc::~VPreProc() {
     if (m_opaquep) { delete m_opaquep; m_opaquep = NULL; }
 }
 
-//************************************************************************
+//*************************************************************************
 // VPreProc Methods.  Just call the implementation functions.
 
 void VPreProc::comment(string cmt) { }
@@ -299,13 +288,10 @@ void VPreProc::openFile(string filename, VFileLine* filelinep) {
     VPreProcImp* idatap = static_cast<VPreProcImp*>(m_opaquep);
     idatap->openFile (filename,filelinep);
 }
-
-int VPreProc::getNextStateToken(string & buf)
-{
+int VPreProc::getNextStateToken(string & buf) {
   VPreProcImp* idatap = static_cast<VPreProcImp*>(m_opaquep);
   return idatap->getNextStateToken(buf);
 }
-
 string VPreProc::getline() {
     VPreProcImp* idatap = static_cast<VPreProcImp*>(m_opaquep);
     return idatap->getparseline(true,0);
@@ -429,8 +415,8 @@ string VPreProcImp::defineSubst(VPreDefRef* refp) {
     // Note we parse the definition parameters and value here.  If a
     // parametrized define is used many, many times, we could cache the
     // parsed result.
-    if (false) {
-	//cout<<"defineSubstIn  `"<<refp->name()<<" "<<refp->params()<<endl;
+    if (debug()>=5) {
+	cout<<"defineSubstIn  `"<<refp->name()<<" "<<refp->params()<<endl;
 	for (unsigned i=0; i<refp->args().size(); i++) {
 	    cout<<"defineArg["<<i<<"] = '"<<refp->args()[i]<<"'"<<endl;
 	}
@@ -438,7 +424,7 @@ string VPreProcImp::defineSubst(VPreDefRef* refp) {
     // Grab value
     string value = m_preprocp->defValue(refp->name());
     QCString value1(value.data());
-  //  if (true) cout<<"defineValue    '"<<VPreLex::cleanDbgStrg(value)<<"'"<<endl;
+    if (debug()>=5) cout<<"defineValue    '"<<VPreLex::cleanDbgStrg(value)<<"'"<<endl;
 
     map<string,string> argValueByName;
     {   // Parse argument list into map
@@ -449,8 +435,8 @@ string VPreProcImp::defineSubst(VPreDefRef* refp) {
 	bool quote = false;
 	bool haveDefault = false;
 	// Note there's a leading ( and trailing ), so parens==1 is the base parsing level
-	QCString valo=refp->params().c_str();
-	const char* cp=valo.data();//+refp->params().c_str();
+	string params = refp->params();  // Must keep str in scope to get pointer
+	const char* cp=params.c_str();
 	if (*cp == '(') cp++;
 	for (; *cp; cp++) {
 	    //if (debug()>=5) cout <<"   Parse  Paren="<<paren<<"  Arg="<<numArgs<<"  token='"<<token<<"'  Parse="<<cp<<endl;
@@ -500,7 +486,6 @@ string VPreProcImp::defineSubst(VPreDefRef* refp) {
 	    if (*cp=='"') quote=!quote;
 	    if (*cp) token += *cp;
 	}
-	int r=refp->args().size();
 	if (refp->args().size() > numArgs
 	    // `define X() is ok to call with nothing
 	    && !(refp->args().size()==1 && numArgs==0 && trimWhitespace(refp->args()[0],false)=="")) {
@@ -610,13 +595,12 @@ bool VPreProcImp::readWholefile(const string& filename, StrList& outl) {
 
     FILE* fp = NULL;
     int fd;
-    char cmd[100];
     bool eof = false;
 
     ussize_t position = filename.find_last_of(".");
     if (filename.length()>3 && 0==filename.compare(filename.length()-3, 3, ".gz")) {
-        sprintf(cmd, "gunzip -c %s", filename.c_str());
-        if ((fp = portable_popen(cmd, "r")) == NULL) {
+	string cmd = "gunzip -c "+filename;
+        if ((fp = portable_popen(cmd.c_str(), "r")) == NULL) {
             return false;
         }
         fd = fileno (fp);
@@ -629,7 +613,7 @@ bool VPreProcImp::readWholefile(const string& filename, StrList& outl) {
 	ussize_t got = read (fd, buf, todo);
 	if (got>0) {
 	    outl.push_back(string(buf, got));
-		}
+	}
 	else if (errno == EINTR || errno == EAGAIN
 #ifdef EWOULDBLOCK
 		 || errno == EWOULDBLOCK
@@ -690,7 +674,6 @@ void VPreProcImp::openFile(string filename, VFileLine* filelinep) {
 		}
 	    }
 	    *it = out;
-	   // cout<<out;
 	}
 
 	// Push the data to an internal buffer.
@@ -877,24 +860,20 @@ int VPreProcImp::getStateToken(string& buf) {
 	case ps_DEFNAME_IFDEF:	// FALLTHRU
 	case ps_DEFNAME_IFNDEF:	// FALLTHRU
 	case ps_DEFNAME_ELSIF: {
-	  	   // sbuffer+= string (yyourtext(), yyourleng());
-	
 	    if (tok==VP_SYMBOL) {
 		m_lastSym.assign(yyourtext(),yyourleng());
 		if (state==ps_DEFNAME_IFDEF
 		    || state==ps_DEFNAME_IFNDEF) {
 		    bool enable = m_preprocp->defExists(m_lastSym);
 		    string l(yyourtext());
-		   bEnable=enable;
-		  //  if (true) cout<<"Ifdef "<<m_lastSym<<(enable?" ON":" OFF")<<endl;
-		    if (state==ps_DEFNAME_IFNDEF) 
-		    enable = !enable;
-		        insertRelString(enable);
+		    bEnable=enable;
+		    if (debug()>=5) cout<<"Ifdef "<<m_lastSym<<(enable?" ON":" OFF")<<endl;
+		    if (state==ps_DEFNAME_IFNDEF) enable = !enable;
+		    insertRelString(enable);
 		    int t=m_lexp->m_tokFilelinep->lineno();
 		    int v=this->m_finFilelinep->lineno();
 		    m_ifdefStack.push(VPreIfEntry(enable,false,l, t));
 		    if (!enable) parsingOff();
-		 //   if(!m_off) sbuffer.clear();
 		    statePop();
 		    goto next_tok;
 		}
@@ -906,13 +885,13 @@ int VPreProcImp::getStateToken(string& buf) {
 			VPreIfEntry lastIf = m_ifdefStack.top(); m_ifdefStack.pop();
 			if (!lastIf.on()) parsingOn();
 			// Handle `if portion
-			;bool enable = !lastIf.everOn() && m_preprocp->defExists(m_lastSym);
+			bool enable = !lastIf.everOn() && m_preprocp->defExists(m_lastSym);
 			bEnable=enable;
-			//if (true) cout<<"Elsif "<<m_lastSym<<(enable?" ON":" OFF")<<endl;
-			 insertRelString(enable);
-			 string l(yyourtext());
-			 int t=m_lexp->m_tokFilelinep->lineno();
-			 int v=this->m_finFilelinep->lineno();
+			if (debug()>=5) cout<<"Elsif "<<m_lastSym<<(enable?" ON":" OFF")<<endl;
+			insertRelString(enable);
+			string l(yyourtext());
+			int t=m_lexp->m_tokFilelinep->lineno();
+			int v=this->m_finFilelinep->lineno();
 			m_ifdefStack.push(VPreIfEntry(enable, lastIf.everOn(),l, t));
 			if (!enable) parsingOff();
 		    }
@@ -974,7 +953,7 @@ int VPreProcImp::getStateToken(string& buf) {
 	}
 	case ps_DEFVALUE: {
 	    static string newlines;
-	   string mist = string (yyourtext(), yyourleng());
+	    string mist = string (yyourtext(), yyourleng());
 	    newlines = "\n";  // Always start with trailing return
 	    if (tok == VP_DEFVALUE) {
 		if (debug()>=5) cout<<"DefValue='"<<VPreLex::cleanDbgStrg(m_lexp->m_defValue)
@@ -985,7 +964,6 @@ int VPreProcImp::getStateToken(string& buf) {
 	    sbuffer+=formals;
 		string value = m_lexp->m_defValue;
 	 	sbuffer+=value;
-		
 		// Remove returns
 		// Not removing returns in values has two problems,
 		// 1. we need to correct line numbers with `line after each substitution
@@ -1005,8 +983,8 @@ int VPreProcImp::getStateToken(string& buf) {
 		    // Remove leading and trailing whitespace
 		    value = trimWhitespace(value, true);
 		    // Define it
-		    //if (true) cout<<"Define "<<m_lastSym<<" "<<formals
-				//	<<" = '"<<VPreLex::cleanDbgStrg(value)<<"'"<<endl;
+		    if (debug()>=5) cout<<"Define "<<m_lastSym<<" "<<formals
+					<<" = '"<<VPreLex::cleanDbgStrg(value)<<"'"<<endl;
 		    m_preprocp->define(m_lastSym, value, formals);
 		}
 	    } else {
@@ -1020,8 +998,6 @@ int VPreProcImp::getStateToken(string& buf) {
 	    return(VP_WHITE);
 	}
 	case ps_DEFPAREN: {
-	  //  sbuffer.clear();
-	
 	    if (tok==VP_TEXT && yyourleng()==1 && yyourtext()[0]=='(') {
 		stateChange(ps_DEFARG);
 		goto next_tok;
@@ -1034,7 +1010,7 @@ int VPreProcImp::getStateToken(string& buf) {
 	    }
 	}
 	case ps_DEFARG: {
-	     if (m_defRefs.empty()) fatalSrc("Shouldn't be in DEFARG w/o active defref");
+	    if (m_defRefs.empty()) fatalSrc("Shouldn't be in DEFARG w/o active defref");
 	    VPreDefRef* refp = &(m_defRefs.top());
 	    refp->nextarg(refp->nextarg()+m_lexp->m_defValue); m_lexp->m_defValue="";
 	    if (debug()>=5) cout<<"defarg++ "<<refp->nextarg()<<endl;
@@ -1095,7 +1071,7 @@ int VPreProcImp::getStateToken(string& buf) {
 	//    printf("\n###################22###################################");
     //    printf("\n %s %s",sbuffer.data(),yyourtext()) ;
     //   printf("\n###################77###################################");
-       sbuffer.insert(0,"`include ");
+        sbuffer.insert(0,"`include ");
         this->m_QC.append(sbuffer.data());
 		m_preprocp->include(m_lastSym);
 		sbuffer.clear();
@@ -1194,7 +1170,6 @@ int VPreProcImp::getStateToken(string& buf) {
 	// Default is to do top level expansion of some tokens
 	switch (tok) {
 	case VP_INCLUDE:
-	     
 	    if (!m_off) {
 	      sbuffer=VerilogDocGen::removeLastWord(sbuffer.data());
 		statePush(ps_INCNAME);
@@ -1205,7 +1180,6 @@ int VPreProcImp::getStateToken(string& buf) {
 	    goto next_tok;
 	case VP_DEFINE:
 	    // No m_off check here, as a `ifdef NEVER `define FOO(`endif)  should work
-	   // sbuffer=string (yyourtext(), yyourleng());
 	    statePush(ps_DEFNAME_DEFINE);
 	    goto next_tok;
 	case VP_IFDEF:
@@ -1224,12 +1198,11 @@ int VPreProcImp::getStateToken(string& buf) {
 		VPreIfEntry lastIf = m_ifdefStack.top(); m_ifdefStack.pop();
 		bool enable = !lastIf.everOn();
 		bEnable=enable;
-	//	if (true) cout<<"Else "<<(enable?" ON":" OFF")<<endl;
-		 insertRelString(enable);
-		 string l("else");
+		if (debug()>=5) cout<<"Else "<<(enable?" ON":" OFF")<<endl;
+		insertRelString(enable);
+		string l("else");
 		int t= m_lexp->m_tokFilelinep->lineno();
 		int g=this->m_finFilelinep->lineno();
-		
 		m_ifdefStack.push(VPreIfEntry(enable, lastIf.everOn(),l, t));
 		if (!lastIf.on()) parsingOn();
 		if (!enable) parsingOff();
@@ -1276,7 +1249,6 @@ int VPreProcImp::getStateToken(string& buf) {
 		}
 		else {
 		    VPreDefRef tempref(name, "0");
-		 //   sbuffer.clear();
 		    string out = defineSubst(&tempref);
 		    // Similar code in parenthesized define (Search for END_OF_DEFARG)
 		    out = m_preprocp->defSubstitute(out);
@@ -1294,11 +1266,9 @@ int VPreProcImp::getStateToken(string& buf) {
 		}
 	    }
 	    else {  // Found, with parameters
-	//	if (true) 
-	//	cout<<"Defref `"<<name<<" => parametrized"<<endl;
+		if (debug()>=5) cout<<"Defref `"<<name<<" => parametrized"<<endl;
 		// The CURRENT macro needs the paren saved, it's not a property of the child macro
-		if (!m_defRefs.empty()) 
-		m_defRefs.top().parenLevel(m_lexp->m_parenLevel);
+		if (!m_defRefs.empty()) m_defRefs.top().parenLevel(m_lexp->m_parenLevel);
 		m_defRefs.push(VPreDefRef(name, params));
 		statePush(ps_DEFPAREN);
 		m_lexp->pushStateDefArg(0);
@@ -1329,7 +1299,7 @@ int VPreProcImp::getStateToken(string& buf) {
         } 
 	//	  cout<<"------------------------------------------------------------"<<endl;
 	#endif
-		error("`ifdef# not terminated at EOF\n");
+		error("`ifdef not terminated at EOF\n");
 	    }
 	    buf = string (yyourtext(), yyourleng());
 	    return tok;
@@ -1350,10 +1320,8 @@ int VPreProcImp::getStateToken(string& buf) {
 	case VP_PSL:
 	case VP_TEXT: {
 	    m_defDepth = 0;
-	    if (!m_off) 
-	    {
+	    if (!m_off) {
 		buf = string (yyourtext(), yyourleng());
-	//	printf("<<  %s >>\n",buf.data());
 		return tok;
 	    }
 	    else goto next_tok;
@@ -1380,9 +1348,11 @@ int VPreProcImp::getFinalToken(string& buf) {
     }
     int tok = m_finToken;
     buf = m_finBuf;
-    if (false) fprintf (stderr,"%d: FIN:      %-10s: %s\n",
-				  m_lexp->m_tokFilelinep->lineno(),
-				  tokenName(tok), VPreLex::cleanDbgStrg(buf).c_str());
+    if (0 && debug()>=5) {
+	string bufcln = VPreLex::cleanDbgStrg(buf);
+	fprintf (stderr,"%d: FIN:      %-10s: %s\n",
+		 m_lexp->m_tokFilelinep->lineno(), tokenName(tok), bufcln.c_str());
+    }
     // Track `line
     const char* bufp = buf.c_str();
     while (*bufp == '\n') bufp++;
@@ -1413,7 +1383,7 @@ int VPreProcImp::getFinalToken(string& buf) {
 	    }
 	}
 	// Track newlines in prep for next token
-	for (const char* cp = buf.c_str(); *cp; cp++) {
+	for (string::iterator cp=buf.begin(); cp!=buf.end(); ++cp) {
 	    if (*cp == '\n') {
 		m_finAtBol = true;
 		m_finFilelinep->linenoIncInPlace();  // Increment in place to avoid new/delete calls.  It's private data.
@@ -1423,7 +1393,6 @@ int VPreProcImp::getFinalToken(string& buf) {
 	}
     }
     m_finAhead = false;  // Consumed the token
- //   printf("\n {return : %s || %s %d}",buf.data(),sbuffer.data(),m_off);
     return tok;
 }
 
@@ -1548,7 +1517,7 @@ return sb+buf;
 
 string VPreProcImp::getparseline(bool stop_at_eol, size_t approx_chunk) {
     // Get a single line from the parse stream.  Buffer unreturned text until the newline.
-   bEnable=false;
+    bEnable=false;
     if (isEof()) return "";
     while (1) {
 	const char* rtnp = NULL;
@@ -1568,19 +1537,19 @@ string VPreProcImp::getparseline(bool stop_at_eol, size_t approx_chunk) {
 	     
 	// cout<<"<<"<<sbuffer<<">>"<<endl;
 	//    sbuffer.clear();
-	    if (false) {
+	    if (debug()>=5) {
+		string bufcln = VPreLex::cleanDbgStrg(buf);
 		fprintf (stderr,"%d: GETFETC:  %-10s: %s\n",
-			 m_lexp->m_tokFilelinep->lineno(), tokenName(tok), VPreLex::cleanDbgStrg(buf).c_str());
+			 m_lexp->m_tokFilelinep->lineno(), tokenName(tok), bufcln.c_str());
 	    }
 	    if (tok==VP_EOF) {
 		// Add a final newline, if the user forgot the final \n.
-		  m_lineChars.append(sbuffer);
-	       m_QC.append(sbuffer.data());	   
+		m_lineChars.append(sbuffer);
+	    m_QC.append(sbuffer.data());
 		if (m_lineChars != "" && m_lineChars[m_lineChars.length()-1] != '\n') {
 		    m_lineChars.append(" ");
-		      m_QC.append(" ");	   
+		    m_QC.append(" ");
 		}
-		   
 		gotEof = true;
 	    }
 	    else if (tok==VP_PSL) {
@@ -1589,30 +1558,34 @@ string VPreProcImp::getparseline(bool stop_at_eol, size_t approx_chunk) {
 	    else {
     	 int z=m_finFilelinep->lineno();
 	     int y=m_lexp->m_tokFilelinep->lineno();
-	      string zp=checkUndoc(buf,sbuffer,bo,tok,z,y);
+	     string zp=checkUndoc(buf,sbuffer,bo,tok,z,y);
   	 //     printf("\n append %s:",zp.data());
-	      m_QC.append(zp.data());	    
-	  
+		m_QC.append(zp.data());
 	    // printf("\n###################................###################################");
        // printf("\n %s",m_QC.data()) ;
         // printf("\n###################--------------###################################");
-
 	     //sbuffer.clear();
 	    }
-		}
- 
+	}
+
 	// Make new string with data up to the newline.
 	size_t len = stop_at_eol ? (rtnp-m_lineChars.c_str()+1) : m_lineChars.length();
 	string theLine;
     theLine.append(m_QC.data()); //, 0,m_QC.length());
 	m_lineChars = m_lineChars.erase(0,len);	// Remove returned characters
     m_QC.resize(0);
+
 	if (!m_preprocp->keepWhitespace() && !gotEof) {
 	    const char* cp=theLine.c_str();
 	    for (; *cp && (isspace(*cp) || *cp=='\n'); cp++) {}
 	    if (!*cp) continue;
 	}
 
+	if (debug()>=4) {
+	    string lncln = VPreLex::cleanDbgStrg(theLine);
+	    fprintf (stderr,"%d: GETLINE:  %s\n",
+		     m_lexp->m_tokFilelinep->lineno(), lncln.c_str());
+	}
 	return theLine;
     }
 }

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //*************************************************************************
 //
-// Copyright 2000-2013 by Wilson Snyder.  This program is free software;
+// Copyright 2000-2015 by Wilson Snyder.  This program is free software;
 // you can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
 //
@@ -34,6 +34,7 @@ using namespace std;
 #include "define.h"
 #include <deque>
 #include <stack>
+
 /// Generic opaque pointer to VPreProcImp implementation class.
 struct VPreProcOpaque {
     virtual ~VPreProcOpaque() {}
@@ -52,7 +53,7 @@ public:
     VPreProc();
     void configure(VFileLine* filelinep);
     virtual ~VPreProc();
-    
+
     // STATE
 private:
     int		m_keepComments;
@@ -115,6 +116,7 @@ public:
     void error(string msg) { fileline()->error(msg); }	///< Report a error
     void fatal(string msg) { fileline()->fatal(msg); }	///< Report a fatal error
     VPreProcOpaque* getImp() const { return m_opaquep;}
+
 private:
     VPreProcOpaque*	m_opaquep;	///< Pointer to parser's implementation data.
 };

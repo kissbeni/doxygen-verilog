@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //*************************************************************************
 //
-// Copyright 2000-2013 by Wilson Snyder.  This program is free software;
+// Copyright 2000-2015 by Wilson Snyder.  This program is free software;
 // you can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
 //
@@ -31,10 +31,9 @@
 #include <stack>
 
 #include "VFileLine.h"
-#include "VPreProc.h"
 
 class VPreLex;
-struct VPreProcImp;
+class VPreProcImp;
 
 //======================================================================
 // Token codes
@@ -99,7 +98,7 @@ struct VPreProcImp;
 #ifndef YY_BUFFER_STATE
 struct yy_buffer_state;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
-# define YY_BUF_SIZE 16384
+//# define YY_BUF_SIZE 16384
 #endif
 
 extern int yylex();
@@ -162,9 +161,8 @@ class VPreLex {
     char* getInputBuffer();
     char* getInputBuffer1();
     void initBuffer(const string & buf);
-  
-  
-    YY_BUFFER_STATE 	m_bufferState;	// Flex state
+
+    YY_BUFFER_STATE	m_bufferState;	// Flex state
     VFileLine*		m_tokFilelinep;	// Starting position of current token
 
     // State to lexer
@@ -178,6 +176,7 @@ class VPreLex {
     int		m_formalLevel;	///< Parenthesis counting inside def formals
     int		m_parenLevel;	///< Parenthesis counting inside def args
     bool	m_defCmtSlash;	///< /*...*/ comment in define had \ ending
+    bool	m_defQuote;	///< Definition value inside quote
     string	m_defValue;	///< Definition value being built.
     int		m_enterExit;	///< For VL_LINE, the enter/exit level
 
@@ -191,6 +190,7 @@ class VPreLex {
 	m_synthesis = false;
 	m_formalLevel = 0;
 	m_parenLevel = 0;
+	m_defQuote = false;
 	m_defCmtSlash = false;
 	m_tokFilelinep = filelinep;
 	m_enterExit = 0;
@@ -205,10 +205,7 @@ class VPreLex {
     VPreStream* curStreamp() { return m_streampStack.top(); }  // Can't be empty, "EOF" is on top
     VFileLine* curFilelinep() { return curStreamp()->m_curFilelinep; }
     void curFilelinep(VFileLine* fl) { curStreamp()->m_curFilelinep = fl; }
-    void appendDefValue(const char* textp, size_t len) 
-    { 
-      m_defValue.append(textp,len); 
-    }
+    void appendDefValue(const char* textp, size_t len) { m_defValue.append(textp,len); }
     void lineDirective(const char* textp) { curFilelinep(curFilelinep()->lineDirective(textp, m_enterExit/*ref*/)); }
     void linenoInc() { if (curStreamp()->m_ignNewlines) curStreamp()->m_ignNewlines--;
 	else curFilelinep(curFilelinep()->create(curFilelinep()->lineno()+1)); }
@@ -235,9 +232,8 @@ class VPreLex {
     static int debug();
     static void debug(int level);
     static string cleanDbgStrg(const string& in);
-     string currentUnreadChars();
-  
-    
+    string currentUnreadChars();
+
 private:
     string endOfStream(bool& againr);
     void initFirstBuffer(VFileLine* filelinep);
