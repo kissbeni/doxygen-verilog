@@ -31,9 +31,10 @@
 #include <stack>
 
 #include "VFileLine.h"
+#include "VPreProc.h"
 
-class VPreLex;
-class VPreProcImp;
+struct VPreLex;
+struct VPreProcImp;
 
 //======================================================================
 // Token codes
@@ -161,7 +162,8 @@ class VPreLex {
     char* getInputBuffer();
     char* getInputBuffer1();
     void initBuffer(const string & buf);
-
+  
+  
     YY_BUFFER_STATE	m_bufferState;	// Flex state
     VFileLine*		m_tokFilelinep;	// Starting position of current token
 

@@ -25,7 +25,6 @@
 
 #include "entry.h"
 #include "verilogscanner.h"
-#include "vhdlscanner.h"
 #include "qfileinfo.h"
 #include "vhdldocgen.h"
 // wrapper class for the parser
@@ -50,33 +49,33 @@ class VerilogDocGen
 public:
 
  // enum VerilogClasses {ENTITYCLASS,PACKBODYCLASS,ARCHITECTURECLASS,PACKAGECLASS};
- 	
+
   enum States {STATE_FUNCTION=0x100,STATE_MODULE,STATE_UDP,STATE_TASK,STATE_GENERATE};
  
   
-	enum VerilogKeyWords
-	{
-	  MODULE=0x1000,
-	  FUNCTION,  //4097
-	  FEATURE,
-	  PRIMITIVE,
-	  COMPONENT, //4100
-	  PORT,
-       PARAMETER, //4102
-	  ALWAYS,          //4103
-	  TASK,                //4104
-	  OUTPUT,          //4105
-	  INPUT,              //4106
-	   INOUT,             //4107
-	  DEFPARAM,
-	  SPECPARAM,
-	  GENERATE,
-	  INCLUDE,
-	  TIME,
-	  SIGNAL,
-	  LIBRARY,
-	  CONFIGURATION
-	  };
+  enum VerilogKeyWords
+  {
+    MODULE=0x1000,
+    FUNCTION,  //4097
+    FEATURE,
+    PRIMITIVE,
+    COMPONENT, //4100
+    PORT,
+    PARAMETER, //4102
+    ALWAYS,          //4103
+    TASK,                //4104
+    OUTPUT,          //4105
+    INPUT,              //4106
+    INOUT,             //4107
+    DEFPARAM,
+    SPECPARAM,
+    GENERATE,
+    INCLUDE,
+    TIME,
+    SIGNAL,
+    LIBRARY,
+    CONFIGURATION
+    };
 
 // functions for  verilog parser ---------------------
 
@@ -89,7 +88,7 @@ static void writeVerilogDeclarations(MemberList* ml,OutputList &ol,
 
 static void writeVerilogDeclarations(MemberList* ml,OutputList& ol,GroupDef* gd,ClassDef* cd,FileDef* fd=NULL);
 
-static void writePlainVerilogDeclarations(MemberDef* mdef,MemberList* mlist,OutputList &ol,
+static void writePlainVerilogDeclarations(MemberList* mlist,OutputList &ol,
                ClassDef *cd,NamespaceDef *nd,FileDef *fd,GroupDef *gd,int specifier);
 
 static void writeVerilogDeclarations(MemberDef* mdef,OutputList &ol,
@@ -98,12 +97,11 @@ static void writeVerilogDeclarations(MemberDef* mdef,OutputList &ol,
 
 
 // insert a new entry
-static Entry* makeNewEntry(char* name=NULL,int sec=0,int spec=0,int line=0,bool add=true);
+static Entry* makeNewEntry(const char* name=NULL,int sec=0,int spec=0,int line=0,bool add=true);
 
 static MemberDef* findMember(QCString& className, QCString& memName,int type);
 
-static MemberDef* findMemberDef(ClassDef* cd,QCString& key,MemberListType type,
-                                int t,bool def=false);
+static MemberDef* findMemberDef(ClassDef* cd,const QCString& key,MemberListType type);
 
 
 static void setCurrVerilogClass(QCString&);
@@ -119,7 +117,7 @@ static const QCString* findKeyWord(const char*);
 
 static void initEntry(Entry *e);
 
-static char* removeLastWord(const char* word);
+static const char* removeLastWord(const char* word);
 
 static QCString getFileNameFromString(const char* fileName);
 

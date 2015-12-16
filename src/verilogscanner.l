@@ -47,6 +47,12 @@
 #include "VPreProc.h"
 #include "message.h"
 #include "tooltip.h"
+
+#define verilogScanYYtext yytext
+#define verilogScanYYleng yyleng
+#define verilogScanYYin yyin
+#define verilogScanYYrestart yyrestart
+
 //--------------------------------------------------------------------------
 //  FEATURE1   [`]("accelerate"|"autoexpand_vectornets"|"celldefine"|"default_decay_time"|"default_nettype"|"default_trireg_strength"|"delay_mode_distributed"|"delay_mode_zero"|"disable_portfaults"|"enable_portfaults"|"endcelldefine"|"endprotect"|"expand_vectornets"|"inline"|"line"|"noaccelerate"|"noexpand_vectornets"|"noremove_gatenames"|"noremove_netnames"|"nosuppress_faults"|"nounconnected_drive"|"portcoerce"|"pragma"|"protect"|"protected"|"remove_gatenames"|"remove_netnames"|"resetall"|"suppress_faults"|"timescale")[^\n]*
 // ("accelerate"|"autoexpand_vectornets"|"celldefine"|"default_decay_time"|"default_nettype"|"default_trireg_strength"|"delay_mode_distributed"|"delay_mode_zero"|"disable_portfaults"|"enable_portfaults"|"endcelldefine"|"endprotect"|"expand_vectornets"|"inline"|"line"|"noaccelerate"|"noexpand_vectornets"|"noremove_gatenames"|"noremove_netnames"|"nosuppress_faults"|"nounconnected_drive"|"portcoerce"|"pragma"|"protect"|"protected"|"remove_gatenames"|"remove_netnames"|"resetall"|"suppress_faults"|"timescale")[\n]*
@@ -54,7 +60,7 @@
 static ParserInterface *g_thisParser;
 static int ss1,ee1;
 static int yyEndModLine=0;
-static int yyEndModLine1;
+//static int yyEndModLine1;
 static int yyLineNr =1;
 static int yyPrevLine=1;
 static int yyEndLine=1;
@@ -115,19 +121,20 @@ static Definition   *g_searchCtx;
 // ------------------< functions for verilog code scanner >---------------
 
 static void writeFont(const char *s,const char* text);
-static void generateMemLink(CodeOutputInterface &ol,QCString &clName,QCString& memberName);
+//static void generateMemLink(CodeOutputInterface &ol,QCString &clName,QCString& memberName);
 static bool writeColoredWord(QCString& word );
 static void startCodeLine();
-static bool generateClassOrGlobalLink(CodeOutputInterface &ol,char *clName, bool typeOnly=FALSE);
+static bool generateClassOrGlobalLink(CodeOutputInterface &ol,const char *clName, bool typeOnly=FALSE);
 static bool generateMemLink(CodeOutputInterface &ol,QCString &clName,QCString& memberName,int type);
-static void codifyLines(char *text,char *cl=NULL,bool undoc=false);
+static void codifyLines(const char *text,char *cl=NULL,bool undoc=false);
 static void addToSearchIndex(const char *text);
 static void writeMultiLineCodeLink(CodeOutputInterface &ol,
                   const char *ref,const char *file,
                   const char *anchor,const char *text,Definition *d);
 static void startFontClass(const char *s);
 static void endFontClass();
-static void writeWord(char *word,char* curr_class=NULL);
+static void writeWord(const char *word,char* curr_class=NULL);
+static void writeSpecWord(const char *word,const char* curr_class,bool classLink);
 
 //-------------------------------------------------------------------
 
@@ -291,23 +298,19 @@ static bool isConstraintFile(QCString fileName,char *type)
 
 static bool  checkMultiComment(QCString& qcs){
   QList<Entry> *pTemp=VerilogDocGen::getEntryAtLine1(curRoots,iDocLine);
- if (!pTemp->isEmpty())
+  
+  if (pTemp->isEmpty()) return false;
+  
+  qcs.stripPrefix("//%");
+  while(!pTemp->isEmpty())
   {
-    int ii=pTemp->count();
-   qcs.stripPrefix("//%");
-    while(!pTemp->isEmpty()){
-    
-    Entry *e=(Entry*)pTemp->first();
+    Entry *e=(Entry*)pTemp->getFirst();
     e->briefLine=yyLineNr;
     e->brief+=qcs;
     iDocLine=-1;
     pTemp->removeFirst();
-    ii=pTemp->count();
-    }
-     return true;
-    }    
- 
-  return false;
+  }
+  return true;
  }
 
  void addGlobalVerilogMember(const Entry *e)
@@ -544,10 +547,12 @@ static bool stripComment=Config_getBool("STRIP_CODE_COMMENTS");
 		}
 
 	if(qcs.stripPrefix("/*!")) 
+  {
 	 if( stripComment){
 		 yyLineNr+=temp.contains("\n");
 		 return;					
 		}
+  }
         else
          qcs.prepend("/*");
 
@@ -634,7 +639,6 @@ void printVerilogBuffer(bool b)
 void writePrevVerilogWords(const QCString& qcs){
 
  uint len=qlist.count();
- uint v=0;
   
   for(uint j=0;j<len;j++) {
     QCString *word=(QCString*)qlist.getFirst();
@@ -648,7 +652,6 @@ void writePrevVerilogWords(const QCString& qcs){
      }else { 
 //	   QCString *wsord=(QCString*)qlist.getFirst();
 	  qlist.removeFirst();
-	 v=j; 
 	 break; 
 	 }
    }//for
@@ -669,7 +672,7 @@ void printVerilogStringList()
 }
 
 
-void codifyVerilogString(char* c,char* color)
+void codifyVerilogString(const char* c,const char* color)
 {
  if(color==NULL)
   g_code->codify(c);
@@ -805,13 +808,13 @@ static void writeMultiLineCodeLink(CodeOutputInterface &ol,
   }
 }
 
-bool generateVerilogClassOrGlobalLink(char *clName)
+bool generateVerilogClassOrGlobalLink(const char *clName)
 {
   return generateClassOrGlobalLink(*g_code,clName,FALSE);
 }
 
 
-static bool generateClassOrGlobalLink(CodeOutputInterface &ol,char *clName, bool typeOnly)
+static bool generateClassOrGlobalLink(CodeOutputInterface &ol,const char *clName, bool typeOnly)
 {
   QCString className=QCString(clName);
 
@@ -874,17 +877,17 @@ static int countLines()
  *  and will be linked.
  */
 
-static void writeWord(char *word,char* curr_class)
+static void writeWord(const char *word,char* curr_class)
 {
-   if(word==NULL)return;
-   const QCString *ss=VerilogDocGen::findKeyWord(word);
-   if(ss)
-     writeFont(ss->data(),word);
-   else{ 
-   QCString w(word);
-   if(!checkString(w))
-   g_code->codify(word);
-   } 
+  if(word==NULL)return;
+  const QCString *ss=VerilogDocGen::findKeyWord(word);
+  if(ss)
+    writeFont(ss->data(),word);
+  else{ 
+    QCString w(word);
+    if(!checkString(w))
+      g_code->codify(word);
+  } 
   return;
 }// writeWord
 
@@ -893,11 +896,12 @@ static void writeWord(char *word,char* curr_class)
 /*! write a code fragment `text' that may span multiple lines, inserting
  * line numbers for each line.
  */
-static void codifyLines(char *text,char *cl,bool undoc)
+static void codifyLines(const char *text,char *cl,bool undoc)
 {
  // printf("codifyLines(%d,\"%d\")\n",yyLineNr,strlen(text));
   if(text==NULL) return;
-  char *p=text,*sp=p;
+  const char *p=text;
+  const char *sp=p;
   char c;
   bool done=FALSE;
   while (!done)
@@ -907,21 +911,19 @@ static void codifyLines(char *text,char *cl,bool undoc)
     if (c=='\n')
     {
       yyLineNr++;
-      *(p-1)='\0';
-     if(!undoc) 
-       writeWord(sp,cl);
-	 else 
-	  g_code->codify(sp);
-	  endCodeLine();
+     // *(p-1)='\0';
+      if(!undoc) 
+        writeWord(sp,cl);
+      else 
+        g_code->codify(sp);
+      endCodeLine();
       if (yyLineNr<g_inputLines) 
-      {
-    	startCodeLine();
-      }
+        startCodeLine();
     }
     else
     {
       writeWord(sp,cl);
-	  done=TRUE;
+      done=TRUE;
     }
   }
 }
@@ -1017,9 +1019,9 @@ static void endFontClass()
 
 //---------------------------------------------------------------
 
-static void addText(char* c,int len);
+static void addText(const char* c,int len);
 static void addToken(char c);
-static int startLex();
+//static int startLex();
 static void resetScanner(const char* s,MyParserConv* parse);
 
 
@@ -1079,13 +1081,10 @@ static bool check(bool bb=true)
     return false;
 
   if(c=='_' || d=='_') return false;
-  					               
+  
   if(g_parseCode){
    qlist.append(new QCString(verilogScanYYtext));
   }
-
- 
-
   return true;
 }
 
@@ -1783,12 +1782,11 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
 
  QCString getLastLetter(){ return lastLetter; }
 
- void  addText (char *word, int len)
+ void  addText (const char *word, int len)
  {
-  	  while(len-->0)
-        g_buf[iSize++]=*word++;
-  
-      g_buf[iSize]='\0'; 
+    while(len-->0)
+      g_buf[iSize++]=*word++;
+    g_buf[iSize]='\0'; 
   } 
 
 const char* getVerilogString() {if(iSize) return &g_buf[0];return NULL;}

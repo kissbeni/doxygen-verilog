@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include "verilogdocgen.h"
 #include "membergroup.h"
-//#include "verilogparser.hpp"
 #include "vhdldocgen.h"
 #include "doxygen.h"
 #include "searchindex.h"
@@ -45,6 +44,7 @@
 #include "commentscan.h"
 #include "arguments.h"
 #define YYMAXDEPTH 15000
+#define  VBUF_SIZE 1024
 
 static MyParserConv* myconv=0;
 
@@ -97,6 +97,7 @@ void addSubEntry(Entry* root, Entry* e);
 %}
 
 %union {
+	#define  VBUF_SIZE 1024
 	int itype;	/* for count */
 	char ctype;	/* for char */
 	char cstr[VBUF_SIZE];
@@ -1976,7 +1977,7 @@ if(pc) return;
   current_rootVerilog->name=QCString("XXX"); // dummy name for root
 }
 
- Entry* VerilogDocGen::makeNewEntry(char* name,int sec,int spec,int line,bool add){
+Entry* VerilogDocGen::makeNewEntry(const char* name,int sec,int spec,int line,bool add){
  
   Entry *e=current;
  /*
@@ -2494,7 +2495,6 @@ QRegExp regg1("[\\s]");
 QCString mod(getVerilogString());
 QCString type; 
 QStringList ql;
-bool sem=false;
 
 if(s)
  mod+=s;

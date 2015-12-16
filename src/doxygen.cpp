@@ -99,7 +99,6 @@
 #include "formula.h"
 #include "settings.h"
 #include "verilogscanner.h"
-//#include "preVerilog.h"
 
 #define RECURSE_ENTRYTREE(func,var) \
   do { if (var->children()) { \

@@ -51,7 +51,6 @@
 #include "memberdef.h"
 #include "memberlist.h"
 #include "verilogdocgen.h"
-//#include "verilogparser.hpp"
 
 #define  VBUF_SIZE 1024
 
@@ -59,19 +58,15 @@ class VerilogScanner : public ParserInterface
 {
   public:
     virtual ~VerilogScanner() {}
-      void finishTranslationUnit() {}
-       void startTranslationUnit(const char *) {}
-   
-       void parseInput(const char * fileName, 
+    void startTranslationUnit(const char *) {}
+    void finishTranslationUnit() {}
+    void parseInput(const char * fileName, 
                     const char *fileBuf, 
                     Entry *root,
                     bool sameTranslationUnit,
                     QStrList &filesInSameTranslationUnit);
-   
-
     bool needsPreprocessing(const QCString &extension);
-   
-       void parseCode(CodeOutputInterface &codeOutIntf,
+    void parseCode(CodeOutputInterface &codeOutIntf,
                    const char *scopeName,
                    const QCString &input,
                    SrcLangExt lang,
@@ -85,16 +80,15 @@ class VerilogScanner : public ParserInterface
                    bool showLineNumbers=TRUE,
                    Definition *searchCtx=0
                   );
-   
-       void resetCodeParserState();
+    void resetCodeParserState();
     void parsePrototype(const char *text);
 };
 
 //------ wrapper functions for parsing code ---------------------------------
  
-void codifyVerilogString(char* c,char* color=NULL);
+void codifyVerilogString(const char* c,const char* color=NULL);
 bool generateVerilogMemLink(QCString &clName,QCString& memberName,int type);
-bool generateVerilogClassOrGlobalLink(char *clName);
+bool generateVerilogClassOrGlobalLink(const char *clName);
 void writeVerilogFont(const char *s,const char* text);
 
 //void generateVerilogMemLink(QCString &clName,QCString& memberName);
