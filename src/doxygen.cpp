@@ -9172,7 +9172,6 @@ static void parseFile(ParserInterface *parser,
   static bool clangAssistedParsing = FALSE;
 #endif
   QCString fileName=fn;
-  
   QCString extension;
   int ei = fileName.findRev('.');
   if (ei!=-1)
@@ -9192,35 +9191,35 @@ static void parseFile(ParserInterface *parser,
   {
     BufStr inBuf(fi.size()+4096);
     msg("Preprocessing %s...\n",fn);
-      BufStr strBuf(fi.size()+4096);
-       if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG")) 
-	 {
-	 VerilogPreProc defProc;
-     readInputFile(fileName,strBuf);
+    BufStr strBuf(fi.size()+4096);
+    if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG")) 
+    {
+      VerilogPreProc defProc;
+      readInputFile(fileName,strBuf);
       QCString s=defProc.performPreprocessing(fi,true).data();
-  #if 0
-   // deleteVerilogChars(bb,"\0");
-        printf("\n++++++++++++++++######++++++++++++++++++++++++++++");
-         printf("\n %s",s.data());    
-           printf("\n+++++++++++++++++++++++++++++++++++++");
-   // exit(0);
-   //  defProc.printDict();
- #endif
- 
- preBuf.addArray(s.data(),s.length()); 
- //exit(0);
- 
- #if 0
-    readInputFile(fileName,inBuf);
-   preprocessVerilogFile(fileName,preBuf,0,-1,inBuf.data());
- #endif 
-   cerr<< "\n finished Preprocessing ..."<<fi.filePath().data()<<endl;
-	 }
-	 else 
-	 {
-    readInputFile(fileName,inBuf);
-    preprocessFile(fileName,inBuf,preBuf);
-  }
+#if 0
+      // deleteVerilogChars(bb,"\0");
+      printf("\n++++++++++++++++######++++++++++++++++++++++++++++");
+      printf("\n %s",s.data());    
+      printf("\n+++++++++++++++++++++++++++++++++++++");
+      // exit(0);
+      //  defProc.printDict();
+#endif
+
+      preBuf.addArray(s.data(),s.length()); 
+      //exit(0);
+#if 0
+      readInputFile(fileName,inBuf);
+      preprocessVerilogFile(fileName,preBuf,0,-1,inBuf.data());
+#endif
+
+      cerr<< "\n finished Preprocessing ..."<<fi.filePath().data()<<endl;
+    }
+    else 
+    {
+      readInputFile(fileName,inBuf);
+      preprocessFile(fileName,inBuf,preBuf);
+    }
   }
   else // no preprocessing
   {
@@ -9853,7 +9852,7 @@ void initDoxygen()
   Doxygen::parserManager->registerParser("dbusxml", new DBusXMLScanner);
   Doxygen::parserManager->registerParser("tcl",     new TclLanguageScanner);
   Doxygen::parserManager->registerParser("md",      new MarkdownFileParser);
-  Doxygen::parserManager->registerParser("v", new VerilogScanner);
+  Doxygen::parserManager->registerParser("v",       new VerilogScanner);
 
   // register any additional parsers here...
 
@@ -9862,6 +9861,7 @@ void initDoxygen()
   initNamespaceMemberIndices();
   initFileMemberIndices();
   //initVerilogPreprocessor();
+
   Doxygen::symbolMap     = new QDict<DefinitionIntf>(50177);
 #ifdef USE_LIBCLANG
   Doxygen::clangUsrMap   = new QDict<Definition>(50177);
@@ -9943,8 +9943,6 @@ void cleanUpDoxygen()
   delete Doxygen::parserManager;
   cleanUpPreprocessor();
   //  cleanUpVerilogPreprocessor();
-
-
   delete theTranslator;
   delete g_outputList;
   Mappers::freeMappers();

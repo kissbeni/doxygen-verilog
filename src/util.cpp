@@ -1653,7 +1653,7 @@ QCString removeRedundantWhiteSpace(const QCString &s)
 {
   static bool cliSupport = Config_getBool("CPP_CLI_SUPPORT");
   static bool vhdl = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
-   
+
   if (s.isEmpty() || vhdl) return s;
   static GrowBuf growBuf;
   //int resultLen = 1024;
@@ -6683,12 +6683,10 @@ g_lang2extMap[] =
   { "python",      "python",  SrcLangExt_Python   },
   { "fortran",     "fortran", SrcLangExt_Fortran  },
   { "vhdl",        "vhdl",    SrcLangExt_VHDL     },
+  { "v",           "v",       SrcLangExt_VERILOG  },
   { "dbusxml",     "dbusxml", SrcLangExt_XML      },
   { "tcl",         "tcl",     SrcLangExt_Tcl      },
   { "md",          "md",      SrcLangExt_Markdown },
-    { "ucf",        "v",    SrcLangExt_VERILOG   },
-  { "qsf",        "v",    SrcLangExt_VERILOG   },
-  { "v",        "v",    SrcLangExt_VERILOG    },
   { 0,             0,        (SrcLangExt)0        }
 };
 
@@ -6752,11 +6750,11 @@ void initDefaultExtensionMapping()
   updateLanguageMapping(".for",      "fortran");
   updateLanguageMapping(".f90",      "fortran");
   updateLanguageMapping(".vhd",      "vhdl");
-  updateLanguageMapping(".v",     "v");
+  updateLanguageMapping(".v",        "v");
   updateLanguageMapping(".vhdl",     "vhdl");
   updateLanguageMapping(".tcl",      "tcl");
-  updateLanguageMapping(".ucf",      "v");
-  updateLanguageMapping(".qsf",      "v");
+  updateLanguageMapping(".ucf",      "vhdl");
+  updateLanguageMapping(".qsf",      "vhdl");
   updateLanguageMapping(".md",       "md");
   updateLanguageMapping(".markdown", "md");
 

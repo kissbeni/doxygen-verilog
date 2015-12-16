@@ -652,24 +652,20 @@ void MemberDefImpl::init(Definition *def,
   if (mt==MemberType_Typedef) type.stripPrefix("typedef ");
   //  type.stripPrefix("struct ");
   //  type.stripPrefix("class " );
-  // type.stripPrefix("union " );
+  //  type.stripPrefix("union " );
   type=removeRedundantWhiteSpace(type);
   args=a;
   args=removeRedundantWhiteSpace(args);
   if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
   {
-  QCString nn=def->name();
-  VerilogDocGen::adjustOpName(nn);
-  if (type.isEmpty()) decl=nn+" "+args; else decl=args+" "+nn+" "+type; 
+    QCString nn=def->name();
+    VerilogDocGen::adjustOpName(nn);
+    if (type.isEmpty()) decl=nn+" "+args; else decl=args+" "+nn+" "+type; 
   }
-else
- {
-  if (type.isEmpty()) 
-    decl=def->name()+" "+args; 
-      else 
-      decl=type+" "+def->name()+" "+args;
-}
-
+  else
+  {
+    if (type.isEmpty()) decl=def->name()+" "+args; else decl=type+" "+def->name()+" "+args;
+  }
 
   memberGroup=0;
   virt=v;

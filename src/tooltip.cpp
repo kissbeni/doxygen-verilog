@@ -112,7 +112,7 @@ void TooltipManager::writeTooltips(CodeOutputInterface &ol)
     }
     SourceLinkInfo declInfo; // TODO: fill in...
     QCString decl;
-     if (d->definitionType()==Definition::TypeMember)
+    if (d->definitionType()==Definition::TypeMember)
     {
       MemberDef *md = (MemberDef*)d;
       QCString s;
@@ -125,19 +125,14 @@ void TooltipManager::writeTooltips(CodeOutputInterface &ol)
       VerilogDocGen::adjustOpName(d);
       VerilogDocGen::adjustMemberName(md);
       decl += d;
-     
-     
-    if(cl)
-      docInfo.name=s+"::"+md->name();
-    
-    
+      if(cl)
+        docInfo.name=s+"::"+md->name();
       if (!decl.isEmpty() && decl.at(0)=='@') // hide enum values
       {
         decl.resize(0);
       }
     }
     VerilogDocGen::adjustOpName(decl);
- 
     ol.writeTooltip(di.currentKey(),                 // id
                     docInfo,                         // symName
                     decl,                            // decl

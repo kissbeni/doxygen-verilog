@@ -881,7 +881,7 @@ void MemberList::setNeedsSorting(bool b)
 QCString MemberList::listTypeAsString(MemberListType type) const
 {
   if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
-  return "";
+    return "";
   switch(type)
   {
     case MemberListType_pubMethods: return "pub-methods";

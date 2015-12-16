@@ -36,7 +36,6 @@
  * modified for doxygen by M. Kreis
  * extended to VHDL 93/2008 
  ******************************************************************************/
-
 %{
 
 #ifndef YYSTYPE

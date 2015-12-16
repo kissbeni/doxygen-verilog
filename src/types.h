@@ -52,10 +52,10 @@ enum SrcLangExt
   SrcLangExt_Python   = 0x00800,
   SrcLangExt_Fortran  = 0x01000,
   SrcLangExt_VHDL     = 0x02000,
+  SrcLangExt_VERILOG  = 0x20000,
   SrcLangExt_XML      = 0x04000,
   SrcLangExt_Tcl      = 0x08000,
-  SrcLangExt_Markdown = 0x10000,
-  SrcLangExt_VERILOG = 0x20000
+  SrcLangExt_Markdown = 0x10000
 };
 
 /** Grouping info */

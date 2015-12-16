@@ -344,7 +344,7 @@ private:
     QCString exp;
 };
 
- bool membersHaveSpecificType(MemberList *ml,uint64 type);
-void startFonts(const QCString& q, const char *keyword,OutputList& ol);
- void writeUCFLink(const MemberDef* mdef,OutputList &ol);
+    bool membersHaveSpecificType(MemberList *ml,uint64 type);
+    void startFonts(const QCString& q, const char *keyword,OutputList& ol);
+    void writeUCFLink(const MemberDef* mdef,OutputList &ol);
 #endif

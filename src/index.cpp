@@ -2277,7 +2277,7 @@ void addClassMemberNameToIndex(MemberDef *md)
   static bool hideFriendCompounds = Config_getBool("HIDE_FRIEND_COMPOUNDS");
   ClassDef *cd=0;
 
-   if ( md->getLanguage()==SrcLangExt_VERILOG) // &&  (VhdlDocGen::isRecord(md) || VhdlDocGen::isUnit(md)))
+  if ( md->getLanguage()==SrcLangExt_VERILOG) // &&  (VhdlDocGen::isRecord(md) || VhdlDocGen::isUnit(md)))
   {
     VerilogDocGen::adjustMemberName(md);
   }

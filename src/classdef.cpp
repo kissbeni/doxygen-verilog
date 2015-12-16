@@ -405,22 +405,21 @@ void ClassDef::internalInsertMember(MemberDef *md,
                                    )
 {
   //printf("insertInternalMember(%s) isHidden()=%d\n",md->name().data(),md->isHidden());
-   static bool optVerilog    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
-
   if (md->isHidden()) return;
 /*
- if(optVerilog)
-	  {
-	  QCString tti=VhdlDocGen::trVhdlType(md->getMemberSpecifiers(),false);
-      //  VhdlDocGen::deleteAllChars(tti,' '); // Always Construct
-  
-        QStringList qsl=this->getList();
-        int i=qsl.findIndex(tti);
-        if(i<0)
-          this->addListType(tti);
-	  }
+  static bool optVerilog    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+  if(optVerilog)
+  {
+    QCString tti=VhdlDocGen::trVhdlType(md->getMemberSpecifiers(),false);
+    //  VhdlDocGen::deleteAllChars(tti,' '); // Always Construct
 
+    QStringList qsl=this->getList();
+    int i=qsl.findIndex(tti);
+    if(i<0)
+      this->addListType(tti);
+  }
 */
+
   if (getLanguage()==SrcLangExt_VHDL || getLanguage()==SrcLangExt_VERILOG)
   {
     QCString title=VhdlDocGen::trVhdlType(md->getMemberSpecifiers(),FALSE);
@@ -1478,12 +1477,11 @@ void ClassDef::endMemberDeclarations(OutputList &ol)
   static bool inlineInheritedMembers = Config_getBool("INLINE_INHERITED_MEMB");
   if (!inlineInheritedMembers && countAdditionalInheritedMembers()>0)
   {
-     if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
-	  {	
-		  ol.endMemberSections();
-	    	return;
-	  }
-
+    if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+    {
+      ol.endMemberSections();
+      return;
+    }
     ol.startMemberHeader("inherited");
     ol.parseText(theTranslator->trAdditionalInheritedMembers());
     ol.endMemberHeader();
@@ -1515,7 +1513,7 @@ void ClassDef::writeSummaryLinks(OutputList &ol)
   bool first=TRUE;
   SrcLangExt lang = getLanguage();
   
-  if ( getLanguage()!=SrcLangExt_VERILOG)
+  if (lang!=SrcLangExt_VHDL && lang!=SrcLangExt_VERILOG)
   {
     for (eli.toFirst();(lde=eli.current());++eli)
     {
@@ -1784,10 +1782,10 @@ void ClassDef::writeDeclarationLink(OutputList &ol,bool &found,const char *heade
       }
       else if (lang==SrcLangExt_VHDL ||  lang==SrcLangExt_VERILOG)
       {
-         if(lang==SrcLangExt_VERILOG)
-		 ol.parseText("Modules");
-	  else
-         ol.parseText(VhdlDocGen::trVhdlType(VhdlDocGen::ARCHITECTURE,FALSE));
+        if(lang==SrcLangExt_VERILOG)
+          ol.parseText("Modules");
+        else
+          ol.parseText(VhdlDocGen::trVhdlType(VhdlDocGen::ARCHITECTURE,FALSE));
       }
       else
       {
@@ -1809,11 +1807,10 @@ void ClassDef::writeDeclarationLink(OutputList &ol,bool &found,const char *heade
     ol.startMemberItem(anchor(),FALSE);
     QCString ctype ;
     if(lang==SrcLangExt_VERILOG)
-	   ctype=VhdlDocGen::getProtectionName((VhdlDocGen::VhdlClasses)protection());
-	else
-		ctype = compoundTypeString();
-
-     QCString cname = displayName(!localNames);
+      ctype=VhdlDocGen::getProtectionName((VhdlDocGen::VhdlClasses)protection());
+    else
+      ctype = compoundTypeString();
+    QCString cname = displayName(!localNames);
 
     if (lang!=SrcLangExt_VHDL) // for VHDL we swap the name and the type
     {

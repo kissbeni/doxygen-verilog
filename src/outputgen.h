@@ -88,7 +88,7 @@ class CodeOutputInterface
      */
     virtual void writeLineNumber(const char *ref,const char *file,
                                  const char *anchor,int lineNumber) = 0;
- 
+
     /*! Writes a tool tip definition 
      *  \param id       unique identifier for the tooltip
      *  \param docInfo  Info about the symbol's documentation.
