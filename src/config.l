@@ -1547,6 +1547,10 @@ void Config::check()
     annotationFromBrief.append("an");
     annotationFromBrief.append("the");
   }
+  if (Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  {
+    Config_getBool("OPTIMIZE_OUTPUT_VHDL")       = TRUE;
+  }
 
   // some default settings for vhdl
   if (Config_getBool("OPTIMIZE_OUTPUT_VHDL") && 
@@ -1584,6 +1588,10 @@ void Config::check()
     Config_getBool("ENABLE_PREPROCESSING")  = FALSE;
     Config_getBool("EXTRACT_PACKAGE")       = TRUE;
   }                               
+  if (Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  {
+    Config_getBool("ENABLE_PREPROCESSING")  = TRUE;
+  }
 
   checkFileName("GENERATE_TAGFILE");
 

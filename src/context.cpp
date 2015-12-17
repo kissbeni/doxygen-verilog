@@ -1509,6 +1509,7 @@ class DefinitionContext
         case SrcLangExt_XML:      result="xml";      break;
         case SrcLangExt_Tcl:      result="tcl";      break;
         case SrcLangExt_Markdown: result="markdown"; break;
+        case SrcLangExt_VERILOG:  result="verilog";  break;
       }
       return result;
     }

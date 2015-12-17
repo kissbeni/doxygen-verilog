@@ -1,3 +1,7 @@
+Fork
+---------
+This fork contains the patches from Doxverilog 2.8 which have been updated and applied to latest Doxygen release
+
 Doxygen
 ===============
 Doxygen is the de facto standard tool for generating documentation from 

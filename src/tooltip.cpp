@@ -22,6 +22,7 @@
 #include "filedef.h"
 #include "doxygen.h"
 #include "config.h"
+#include "verilogdocgen.h"
 
 class TooltipManager::Private
 {
@@ -114,12 +115,24 @@ void TooltipManager::writeTooltips(CodeOutputInterface &ol)
     if (d->definitionType()==Definition::TypeMember)
     {
       MemberDef *md = (MemberDef*)d;
-      decl = md->declaration();
+      QCString s;
+      ClassDef *cl=md->getClassDef();
+      if(cl)
+        s=cl->name();
+      QCString s1=VerilogDocGen::convertTypeToString(md->getMemberSpecifiers());
+      decl=s1+" ";
+      QCString d=md->declaration();
+      VerilogDocGen::adjustOpName(d);
+      VerilogDocGen::adjustMemberName(md);
+      decl += d;
+      if(cl)
+        docInfo.name=s+"::"+md->name();
       if (!decl.isEmpty() && decl.at(0)=='@') // hide enum values
       {
         decl.resize(0);
       }
     }
+    VerilogDocGen::adjustOpName(decl);
     ol.writeTooltip(di.currentKey(),                 // id
                     docInfo,                         // symName
                     decl,                            // decl

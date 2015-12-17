@@ -1853,7 +1853,12 @@ class TranslatorEnglish : public Translator
 
     /*! Used file list for a Java enum */
     virtual QCString trEnumGeneratedFromFiles(bool single)
-    { QCString result = "The documentation for this enum was generated from the following file";
+    {
+      QCString result;
+      if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+        result = "The documentation for this module was generated from the following file";
+      else
+        result = "The documentation for this enum was generated from the following file";
       if (!single) result += "s";
       result+=":";
       return result;
@@ -1861,7 +1866,12 @@ class TranslatorEnglish : public Translator
 
     /*! Header of a Java enum page (Java enums are represented as classes). */
     virtual QCString trEnumReference(const char *name)
-    { return QCString(name)+" Enum Reference"; }
+    {
+      if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))	
+        return QCString(name)+" Module Reference";
+      else
+       return QCString(name)+" Enum Reference";
+     }
 
     /*! Used for a section containing inherited members */
     virtual QCString trInheritedFrom(const char *members,const char *what)

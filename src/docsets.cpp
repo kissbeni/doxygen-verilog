@@ -333,6 +333,7 @@ void DocSets::addIndexItem(Definition *context,MemberDef *md,
     case SrcLangExt_XML:     lang="xml"; break;        // DBUS XML
     case SrcLangExt_Tcl:     lang="tcl"; break;        // Tcl
     case SrcLangExt_Markdown:lang="markdown"; break;   // Markdown
+    case SrcLangExt_VERILOG: lang="verilog"; break;    // VERILOG
     case SrcLangExt_Unknown: lang="unknown"; break;    // should not happen!
   }
 

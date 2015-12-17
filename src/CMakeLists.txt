@@ -92,6 +92,7 @@ FLEX_TARGET(pycode         pycode.l         ${GENERATED_SRC}/pycode.cpp         
 FLEX_TARGET(fortranscanner fortranscanner.l ${GENERATED_SRC}/fortranscanner.cpp COMPILE_FLAGS "$(LEX_FLAGS) -PfortranscannerYY -i")
 FLEX_TARGET(fortrancode    fortrancode.l    ${GENERATED_SRC}/fortrancode.cpp    COMPILE_FLAGS "$(LEX_FLAGS) -PfortrancodeYY -i")
 FLEX_TARGET(vhdlcode       vhdlcode.l       ${GENERATED_SRC}/vhdlcode.cpp       COMPILE_FLAGS "$(LEX_FLAGS) -PvhdlcodeYY -i")
+FLEX_TARGET(verilogscanner verilogscanner.l ${GENERATED_SRC}/verilogscanner.cpp COMPILE_FLAGS "$(LEX_FLAGS) -PverilogScanYY -i")
 FLEX_TARGET(tclscanner     tclscanner.l     ${GENERATED_SRC}/tclscanner.cpp     COMPILE_FLAGS "$(LEX_FLAGS) -PtclscannerYY -i")
 FLEX_TARGET(pre            pre.l            ${GENERATED_SRC}/pre.cpp            COMPILE_FLAGS "$(LEX_FLAGS) -PpreYY")
 FLEX_TARGET(declinfo       declinfo.l       ${GENERATED_SRC}/declinfo.cpp       COMPILE_FLAGS "$(LEX_FLAGS) -PdeclinfoYY")
@@ -102,8 +103,11 @@ FLEX_TARGET(commentscan    commentscan.l    ${GENERATED_SRC}/commentscan.cpp    
 FLEX_TARGET(constexp       constexp.l       ${GENERATED_SRC}/constexp.cpp       COMPILE_FLAGS "$(LEX_FLAGS) -PconstexpYY")
 FLEX_TARGET(xmlcode        xmlcode.l        ${GENERATED_SRC}/xmlcode.cpp        COMPILE_FLAGS "$(LEX_FLAGS) -PxmlcodeYY")
 FLEX_TARGET(config         config.l         ${GENERATED_SRC}/config.cpp         COMPILE_FLAGS "$(LEX_FLAGS) -PconfigYY")
+FLEX_TARGET(VPreLex        VPreLex.l        ${GENERATED_SRC}/VPreLex.cpp        COMPILE_FLAGS "$(LEX_FLAGS) -PVPreLex")
 
 BISON_TARGET(vhdlparser    vhdlparser.y     ${GENERATED_SRC}/vhdlparser.cpp     COMPILE_FLAGS "$(YACC_FLAGS) -l -p vhdlscannerYY")
+BISON_TARGET(verilogparser verilogparser.y  ${GENERATED_SRC}/verilogparser.cpp  COMPILE_FLAGS "$(YACC_FLAGS) -l -d -p verilogScanYY")
+BISON_TARGET(verilogparserh verilogparser.y  ${GENERATED_SRC}/verilogparser.c   COMPILE_FLAGS "$(YACC_FLAGS) -l -d -p verilogScanYY")
 BISON_TARGET(constexp      constexp.y       ${GENERATED_SRC}/ce_parse.cpp       COMPILE_FLAGS "$(YACC_FLAGS) -l -p constexpYY")
 
 add_library(doxycfg STATIC
@@ -130,6 +134,10 @@ add_library(_doxygen STATIC
     ${GENERATED_SRC}/fortranscanner.cpp
     ${GENERATED_SRC}/fortrancode.cpp
     ${GENERATED_SRC}/vhdlcode.cpp
+    ${GENERATED_SRC}/verilogparser.cpp
+    ${GENERATED_SRC}/verilogparser.h
+    ${GENERATED_SRC}/verilogscanner.cpp
+    ${GENERATED_SRC}/VPreLex.cpp
     ${GENERATED_SRC}/tclscanner.cpp
     ${GENERATED_SRC}/pre.cpp
     ${GENERATED_SRC}/declinfo.cpp
@@ -216,8 +224,11 @@ add_library(_doxygen STATIC
     textdocvisitor.cpp
     tooltip.cpp
     util.cpp
+    verilogdocgen.cpp
     vhdldocgen.cpp
     vhdljjparser.cpp
+    VPreProc.cpp
+    VFileLine.cpp
     xmldocvisitor.cpp
     xmlgen.cpp
     docbookvisitor.cpp

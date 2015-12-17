@@ -6950,6 +6950,7 @@ g_lang2extMap[] =
   { "fortranfree", "fortranfree",   SrcLangExt_Fortran  },
   { "fortranfixed", "fortranfixed", SrcLangExt_Fortran  },
   { "vhdl",        "vhdl",          SrcLangExt_VHDL     },
+  { "v",           "v",             SrcLangExt_VERILOG  },
   { "xml",         "xml",           SrcLangExt_XML      },
   { "tcl",         "tcl",           SrcLangExt_Tcl      },
   { "md",          "md",            SrcLangExt_Markdown },
@@ -7039,6 +7040,7 @@ void initDefaultExtensionMapping()
   updateLanguageMapping(".for",      "fortran");
   updateLanguageMapping(".f90",      "fortran");
   updateLanguageMapping(".vhd",      "vhdl");
+  updateLanguageMapping(".v",        "v");
   updateLanguageMapping(".vhdl",     "vhdl");
   updateLanguageMapping(".tcl",      "tcl");
   updateLanguageMapping(".ucf",      "vhdl");
@@ -8048,6 +8050,7 @@ QCString langToString(SrcLangExt lang)
     case SrcLangExt_Python:   return "Python";
     case SrcLangExt_Fortran:  return "Fortran";
     case SrcLangExt_VHDL:     return "VHDL";
+    case SrcLangExt_VERILOG:  return "Verilog";
     case SrcLangExt_XML:      return "XML";
     case SrcLangExt_Tcl:      return "Tcl";
     case SrcLangExt_Markdown: return "Markdown";

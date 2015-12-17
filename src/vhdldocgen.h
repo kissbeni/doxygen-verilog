@@ -38,6 +38,7 @@ class GroupDef;
 class FileDef;
 class NamespaceDef;
 struct Argument;
+#include "config.h"
 
 /** Class for generating documentation specific for VHDL */
 class VhdlDocGen  
@@ -248,7 +249,7 @@ class VhdlDocGen
 
   static void resetCodeVhdlParserState();
 
-  private:
+  public:
     static void findAllArchitectures(QList<QCString>& ql,const ClassDef *cd);
     static bool compareArgList(ArgumentList*,ArgumentList*);
     static void writeVhdlLink(const ClassDef* cdd ,OutputList& ol,QCString& type,QCString& name,QCString& beh);
@@ -343,4 +344,7 @@ private:
     QCString exp;
 };
 
+    bool membersHaveSpecificType(MemberList *ml,uint64 type);
+    void startFonts(const QCString& q, const char *keyword,OutputList& ol);
+    void writeUCFLink(const MemberDef* mdef,OutputList &ol);
 #endif

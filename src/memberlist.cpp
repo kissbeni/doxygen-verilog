@@ -558,7 +558,7 @@ void MemberList::writeDeclarations(OutputList &ol,
   }
   else if (num>0)
   {
-    if (title) 
+    if (title && !Config_getBool("OPTIMIZE_OUTPUT_VERILOG")) 
     {
       if (showInline)
       {
@@ -906,6 +906,8 @@ void MemberList::setNeedsSorting(bool b)
 
 QCString MemberList::listTypeAsString(MemberListType type) 
 {
+  if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+    return "";
   switch(type)
   {
     case MemberListType_pubMethods: return "pub-methods";
