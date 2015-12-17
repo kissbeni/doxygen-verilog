@@ -46,13 +46,19 @@ if (${CMAKE_SYSTEM} MATCHES "Darwin")
     set(EXTRA_LIBS ${CORESERVICES_LIB})
 endif()
 
-if (WIN32)
+if (WIN32 AND NOT MINGW)
     if(NOT ICONV_DIR)
       set(ICONV_DIR "${CMAKE_SOURCE_DIR}/winbuild")
     endif()
     set(CMAKE_REQUIRED_DEFINITIONS "-DLIBICONV_STATIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj") # needed for language.cpp on 64bit
     add_definitions(-DLIBICONV_STATIC -D_CRT_SECURE_NO_WARNINGS)
+endif()
+
+if (MINGW)
+    set(CMAKE_REQUIRED_DEFINITIONS "-DLIBICONV_STATIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -mconsole")
+    add_definitions(-DLIBICONV_STATIC)
 endif()
 
 find_program(DOT NAMES dot)
