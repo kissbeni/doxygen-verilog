@@ -389,7 +389,7 @@ t_ToolDir
 // for debugging set yydebug=1
 %initial-action { yydebug=0; }
 
-%expect 2
+%expect 3
 
 // minimum bison version
 //%required "2.2"
@@ -882,16 +882,17 @@ association_list_1:  /* empty */                           { $$=""; }
 association_list_1: association_list_1 association_list_2  { $$=$1+" "+$2; }
 association_list_2: t_Comma association_element            { $$=", "+$2; }
 // VHDL '93 range_constraint ::= range range
-//gen_association_list : gen_assoc gen_assoc { $$=$1+$2;}
+gen_association_list : gen_assoc gen_assoc { $$=$1+$2;}
                                 
 gen_association_list : gen_assoc { $$=$1; }
 
-gen_assoc: t_LeftParen gen_association_element gen_association_list_1 t_RightParen
+gen_assoc: t_LeftParen gen_association_element gen_association_list_1 t_RightParen 
     {
       QCString str="("+$2+$3;
       str.append(")");
       $$=str;
     }
+
 gen_association_list: t_LeftParen  error t_RightParen { $$=""; }
 gen_association_list: t_LeftParen t_OPEN t_RightParen { $$=" ( open ) "; }
 
@@ -2552,10 +2553,10 @@ static void addVhdlType(const QCString &name,int startLine,int section,
     if (current->args.isEmpty())
     {
       current->args=args;
-//      current->args.replace(reg,"%"); // insert dummy chars because wihte spaces are removed
+//    current->args.replace(reg,"%"); // insert dummy chars because wihte spaces are removed
     }
     current->type=type;
-//    current->type.replace(reg,"%"); // insert dummy chars because white spaces are removed
+//  current->type.replace(reg,"%"); // insert dummy chars because white spaces are removed
     current->protection=prot;
  
        if (!lastCompound && (section==Entry::VARIABLE_SEC) &&  (spec == VhdlDocGen::USE || spec == VhdlDocGen::LIBRARY) )
