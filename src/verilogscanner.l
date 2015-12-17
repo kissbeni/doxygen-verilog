@@ -651,7 +651,7 @@ void writePrevVerilogWords(const QCString& qcs){
      qlist.removeFirst();
      }else { 
 //	   QCString *wsord=(QCString*)qlist.getFirst();
-	  qlist.removeFirst();
+	  qlist.removeFirst(); 
 	 break; 
 	 }
    }//for
@@ -1801,8 +1801,6 @@ int getVerilogEndModuleLine()
  return yyEndModLine; 
  };
 
-void VerilogScanner::resetCodeParserState(){}
-bool VerilogScanner::needsPreprocessing(const QCString &extension){ return true; }
 void VerilogScanner::parsePrototype(const char *text){ }
 
 void VerilogScanner::parseInput(const char *fileName,const char *fileBuf,Entry *root,

@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #include <ctype.h>
-
 #include <qarray.h>
 #include <qstack.h>
 #include <unistd.h>
@@ -65,7 +63,7 @@ class VerilogScanner : public ParserInterface
                     Entry *root,
                     bool sameTranslationUnit,
                     QStrList &filesInSameTranslationUnit);
-    bool needsPreprocessing(const QCString &extension);
+    bool needsPreprocessing(const QCString &){ return TRUE; }
     void parseCode(CodeOutputInterface &codeOutIntf,
                    const char *scopeName,
                    const QCString &input,
@@ -81,7 +79,7 @@ class VerilogScanner : public ParserInterface
                    Definition *searchCtx=0,
                    bool collectXRefs=TRUE
                   );
-    void resetCodeParserState();
+    void resetCodeParserState(){};
     void parsePrototype(const char *text);
 };
 
