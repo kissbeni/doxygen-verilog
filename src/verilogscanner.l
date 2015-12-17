@@ -42,7 +42,7 @@
 #include "scanner.h"
 #include "vhdldocgen.h"
 #include "util.h"
-#include "verilogparser.hpp"
+#include "verilogparser.h"
 #include "bufstr.h"
 #include "VPreProc.h"
 #include "message.h"
@@ -285,7 +285,7 @@ static void makeInlineDoc(int endCode)
 
 }// makeInlineDoc
 
-static bool isConstraintFile(QCString fileName,char *type)
+static bool isConstraintFile(QCString fileName,const char *type)
 {
   int i=fileName.findRev(type);
   int j=fileName.length();

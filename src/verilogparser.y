@@ -27,7 +27,7 @@
 
 %locations
 %skeleton "glr.c" 
-%name-prefix="c_"
+%name-prefix "c_"
 %debug
 
 %{
@@ -88,7 +88,7 @@ static void parseReg(Entry* e);
 static void parsePortDir(Entry* e,int type);
 static void parseParam(Entry* e);
 static void parseListOfPorts();
-static void parseAlways(char * s=0,bool b=false);
+static void parseAlways(const char * s=0,bool b=false);
 static void parseModuleInst(QCString& first,QCString& sec);
 
 
@@ -2485,7 +2485,7 @@ while(mod.stripPrefix(" "));
   {prevType="";type="";}
 }
 
-void parseAlways(char * s,bool bBody)
+void parseAlways(const char * s,bool bBody)
 {
 
 if(currVerilogType!=VerilogDocGen::ALWAYS || generateItem) return ;

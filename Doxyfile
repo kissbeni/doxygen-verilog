@@ -125,7 +125,7 @@ EXCLUDE                = src/code.cpp \
                          src/vhdlscanner.cpp \
                          src/vhdlparser.cpp \
                          src/verilogscanner.cpp \
-                         src/verilogparser.hpp \
+                         src/verilogparser.h \
                          src/verilogparser.cpp \
                          src/VPreLex.cpp \
                          src/vhdlcode.cpp \

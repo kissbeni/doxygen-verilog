@@ -4302,7 +4302,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\verilogparser.hpp"
+				RelativePath="..\src\verilogparser.h"
 				>
 			</File>
 			<File

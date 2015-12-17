@@ -107,16 +107,15 @@ sub GenerateDep {
 	$(YACC) -l -d -p vhdlScanYY vhdlparser.y -o vhdlparser.c 
 	-rm vhdlparser.c	
 	
-#$ GenerateDep("verilogscanner.cpp","verilogscanner.l", "verilogparser.hpp");
+#$ GenerateDep("verilogscanner.cpp","verilogscanner.l", "verilogparser.h");
 	$(LEX)  -8  -PverilogScanYY -t verilogscanner.l | $(INCBUFSIZE) >verilogscanner.cpp
 
 #$ GenerateDep("verilogparser.cpp","verilogparser.y");
 	$(YACC)  -v -d -p verilogScanYY verilogparser.y -o verilogparser.cpp 
 
-#$ GenerateDep("verilogparser.hpp","verilogparser.y");
+#$ GenerateDep("verilogparser.h","verilogparser.y");
 	$(YACC) -l -d -p verilogScanYY verilogparser.y -o verilogparser.c 
 	-rm verilogparser.c
-	-mv verilogparser.h verilogparser.hpp 
 
 #$ GenerateDep("VPreLex.cpp","VPreLex.l");
 	$(LEX) -PVPreLex -t VPreLex.l | $(INCBUFSIZE) >VPreLex.cpp 
