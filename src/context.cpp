@@ -332,22 +332,31 @@ TemplateVariant ConfigContext::get(const char *name) const
   TemplateVariant result;
   if (name)
   {
-    ConfigOption *option = Config::instance()->get(name);
+    const ConfigValues::Info *option = ConfigValues::instance().get(name);
     if (option)
     {
-      switch (option->kind())
+      switch (option->type)
       {
-        case ConfigOption::O_Bool:
-          return TemplateVariant(*((ConfigBool*)option)->valueRef());
-        case ConfigOption::O_Int:
-          return TemplateVariant(*((ConfigInt*)option)->valueRef());
-        case ConfigOption::O_Enum:
-          return TemplateVariant(*((ConfigEnum*)option)->valueRef());
-        case ConfigOption::O_String:
-          return TemplateVariant(*((ConfigString*)option)->valueRef());
-        case ConfigOption::O_List:
-          return p->fetchList(name,((ConfigList*)option)->valueRef());
-          break;
+        case ConfigValues::Info::Bool:
+          {
+            bool b = ConfigValues::instance().*((ConfigValues::InfoBool*)option)->item;
+            return TemplateVariant(b);
+          }
+        case ConfigValues::Info::Int:
+          {
+            int i = ConfigValues::instance().*((ConfigValues::InfoInt*)option)->item;
+            return TemplateVariant(i);
+          }
+        case ConfigValues::Info::String:
+          {
+            QCString s = ConfigValues::instance().*((ConfigValues::InfoString*)option)->item;
+            return TemplateVariant(s);
+          }
+        case ConfigValues::Info::List:
+          {
+            const QStrList &l = ConfigValues::instance().*((ConfigValues::InfoList*)option)->item;
+            return p->fetchList(name,&l);
+          }
         default:
           break;
       }
@@ -396,7 +405,7 @@ class DoxygenContext::Private
   private:
     struct Cachable
     {
-      Cachable() { maxJaxCodeFile=fileToString(Config_getString("MATHJAX_CODEFILE")); }
+      Cachable() { maxJaxCodeFile=fileToString(Config_getString(MATHJAX_CODEFILE)); }
       QCString maxJaxCodeFile;
     };
     mutable Cachable m_cache;
@@ -722,12 +731,12 @@ class TranslateContext::Private
     }
     TemplateVariant fileMembersDescription() const
     {
-      static bool extractAll = Config_getBool("EXTRACT_ALL");
+      static bool extractAll = Config_getBool(EXTRACT_ALL);
       return theTranslator->trFileMembersDescription(extractAll);
     }
     TemplateVariant namespaceMembersDescription() const
     {
-      static bool extractAll = Config_getBool("EXTRACT_ALL");
+      static bool extractAll = Config_getBool(EXTRACT_ALL);
       return theTranslator->trNamespaceMemberDescription(extractAll);
     }
     TemplateVariant classHierarchyDescription() const
@@ -744,8 +753,8 @@ class TranslateContext::Private
     }
     TemplateVariant classMembersDescription() const
     {
-      static bool extractAll = Config_getBool("EXTRACT_ALL");
-      static bool fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
+      static bool extractAll = Config_getBool(EXTRACT_ALL);
+      static bool fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
       if (fortranOpt)
       {
         return theTranslator->trCompoundMembersDescriptionFortran(extractAll);
@@ -893,17 +902,17 @@ class TranslateContext::Private
     }
     TemplateVariant fileListDescription() const
     {
-      bool extractAll = Config_getBool("EXTRACT_ALL");
+      bool extractAll = Config_getBool(EXTRACT_ALL);
       return theTranslator->trFileListDescription(extractAll);
     }
     TemplateVariant modulesDescription() const
     {
-      bool extractAll = Config_getBool("EXTRACT_ALL");
+      bool extractAll = Config_getBool(EXTRACT_ALL);
       return theTranslator->trModulesListDescription(extractAll);
     }
     TemplateVariant namespaceListDescription() const
     {
-      bool extractAll = Config_getBool("EXTRACT_ALL");
+      bool extractAll = Config_getBool(EXTRACT_ALL);
       return theTranslator->trNamespaceListDescription(extractAll);
     }
     TemplateVariant directories() const
@@ -916,8 +925,8 @@ class TranslateContext::Private
     }
     TemplateVariant functions() const
     {
-      static bool fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
-      static bool vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      static bool fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
+      static bool vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
       return fortranOpt ? theTranslator->trSubprograms() :
              vhdlOpt    ? VhdlDocGen::trFunctionAndProc() :
                           theTranslator->trFunctions();
@@ -1191,9 +1200,9 @@ class TranslateContext::Private
         init=TRUE;
       }
 
-      m_javaOpt    = Config_getBool("OPTIMIZE_OUTPUT_JAVA");
-      m_fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
-      m_vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      m_javaOpt    = Config_getBool(OPTIMIZE_OUTPUT_JAVA);
+      m_fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
+      m_vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
     }
     TemplateVariant get(const char *n) const
     {
@@ -1296,7 +1305,7 @@ static TemplateVariant parseCode(MemberDef *md,const QCString &scopeName,const Q
 
 static TemplateVariant parseCode(FileDef *fd,const QCString &relPath)
 {
-  static bool filterSourceFiles = Config_getBool("FILTER_SOURCE_FILES");
+  static bool filterSourceFiles = Config_getBool(FILTER_SOURCE_FILES);
   ParserInterface *pIntf = Doxygen::parserManager->getParser(fd->getDefFileExtension());
   pIntf->resetCodeParserState();
   QGString s;
@@ -1430,7 +1439,7 @@ class DefinitionContext
     }
     QCString relPathAsString() const
     {
-      static bool createSubdirs = Config_getBool("CREATE_SUBDIRS");
+      static bool createSubdirs = Config_getBool(CREATE_SUBDIRS);
       return createSubdirs ? QCString("../../") : QCString("");
     }
     virtual TemplateVariant relPath() const
@@ -1911,9 +1920,9 @@ class ClassContext::Private : public DefinitionContext<ClassContext::Private>
     TemplateVariant hasInheritanceDiagram() const
     {
       bool result=FALSE;
-      static bool haveDot       = Config_getBool("HAVE_DOT");
-      static bool classDiagrams = Config_getBool("CLASS_DIAGRAMS");
-      static bool classGraph    = Config_getBool("CLASS_GRAPH");
+      static bool haveDot       = Config_getBool(HAVE_DOT);
+      static bool classDiagrams = Config_getBool(CLASS_DIAGRAMS);
+      static bool classGraph    = Config_getBool(CLASS_GRAPH);
       if (haveDot && (classDiagrams || classGraph))
       {
         DotClassGraph *cg = getClassGraph();
@@ -1928,9 +1937,9 @@ class ClassContext::Private : public DefinitionContext<ClassContext::Private>
     TemplateVariant inheritanceDiagram() const
     {
       QGString result;
-      static bool haveDot       = Config_getBool("HAVE_DOT");
-      static bool classDiagrams = Config_getBool("CLASS_DIAGRAMS");
-      static bool classGraph    = Config_getBool("CLASS_GRAPH");
+      static bool haveDot       = Config_getBool(HAVE_DOT);
+      static bool classDiagrams = Config_getBool(CLASS_DIAGRAMS);
+      static bool classGraph    = Config_getBool(CLASS_GRAPH);
       if (haveDot && (classDiagrams || classGraph))
       {
         DotClassGraph *cg = getClassGraph();
@@ -2007,12 +2016,12 @@ class ClassContext::Private : public DefinitionContext<ClassContext::Private>
     }
     TemplateVariant hasCollaborationDiagram() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       return haveDot && !getCollaborationGraph()->isTrivial();
     }
     TemplateVariant collaborationDiagram() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       QGString result;
       if (haveDot)
       {
@@ -3010,13 +3019,13 @@ class FileContext::Private : public DefinitionContext<FileContext::Private>
     }
     TemplateVariant hasIncludeGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       DotInclDepGraph *incGraph = getIncludeGraph();
       return (haveDot && !incGraph->isTooBig() && !incGraph->isTrivial());
     }
     TemplateVariant includeGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       QGString result;
       if (haveDot)
       {
@@ -3062,13 +3071,13 @@ class FileContext::Private : public DefinitionContext<FileContext::Private>
     }
     TemplateVariant hasIncludedByGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       DotInclDepGraph *incGraph = getIncludedByGraph();
       return (haveDot && !incGraph->isTooBig() && !incGraph->isTrivial());
     }
     TemplateVariant includedByGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       QGString result;
       if (haveDot)
       {
@@ -3471,8 +3480,8 @@ class DirContext::Private : public DefinitionContext<DirContext::Private>
     TemplateVariant hasDirGraph() const
     {
       bool result=FALSE;
-      static bool haveDot  = Config_getBool("HAVE_DOT");
-      static bool dirGraph = Config_getBool("DIRECTORY_GRAPH");
+      static bool haveDot  = Config_getBool(HAVE_DOT);
+      static bool dirGraph = Config_getBool(DIRECTORY_GRAPH);
       if (haveDot && dirGraph)
       {
         DotDirDeps *graph = getDirDepsGraph();
@@ -3483,8 +3492,8 @@ class DirContext::Private : public DefinitionContext<DirContext::Private>
     TemplateVariant dirGraph() const
     {
       QGString result;
-      static bool haveDot  = Config_getBool("HAVE_DOT");
-      static bool dirGraph = Config_getBool("DIRECTORY_GRAPH");
+      static bool haveDot  = Config_getBool(HAVE_DOT);
+      static bool dirGraph = Config_getBool(DIRECTORY_GRAPH);
       if (haveDot && dirGraph)
       {
         DotDirDeps *graph = getDirDepsGraph();
@@ -3786,7 +3795,7 @@ class TextGeneratorLatex : public TextGeneratorIntf
                    const char *anchor,const char *text
                   ) const
     {
-      static bool pdfHyperlinks = Config_getBool("PDF_HYPERLINKS");
+      static bool pdfHyperlinks = Config_getBool(PDF_HYPERLINKS);
       if (!ref && pdfHyperlinks)
       {
         m_ts << "\\hyperlink{";
@@ -4882,7 +4891,7 @@ class MemberContext::Private : public DefinitionContext<MemberContext::Private>
     }
     TemplateVariant hasCallGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       if (m_memberDef->hasCallGraph() && haveDot &&
           (m_memberDef->isFunction() || m_memberDef->isSlot() || m_memberDef->isSignal()))
       {
@@ -4942,7 +4951,7 @@ class MemberContext::Private : public DefinitionContext<MemberContext::Private>
     }
     TemplateVariant hasCallerGraph() const
     {
-      static bool haveDot = Config_getBool("HAVE_DOT");
+      static bool haveDot = Config_getBool(HAVE_DOT);
       if (m_memberDef->hasCallerGraph() && haveDot &&
           (m_memberDef->isFunction() || m_memberDef->isSlot() || m_memberDef->isSignal()))
       {
@@ -5201,8 +5210,8 @@ class ModuleContext::Private : public DefinitionContext<ModuleContext::Private>
     TemplateVariant hasGroupGraph() const
     {
       bool result=FALSE;
-      static bool haveDot     = Config_getBool("HAVE_DOT");
-      static bool groupGraphs = Config_getBool("GROUP_GRAPHS");
+      static bool haveDot     = Config_getBool(HAVE_DOT);
+      static bool groupGraphs = Config_getBool(GROUP_GRAPHS);
       if (haveDot && groupGraphs)
       {
         DotGroupCollaboration *graph = getGroupGraph();
@@ -5213,8 +5222,8 @@ class ModuleContext::Private : public DefinitionContext<ModuleContext::Private>
     TemplateVariant groupGraph() const
     {
       QGString result;
-      static bool haveDot     = Config_getBool("HAVE_DOT");
-      static bool groupGraphs = Config_getBool("GROUP_GRAPHS");
+      static bool haveDot     = Config_getBool(HAVE_DOT);
+      static bool groupGraphs = Config_getBool(GROUP_GRAPHS);
       if (haveDot && groupGraphs)
       {
         DotGroupCollaboration *graph = getGroupGraph();
@@ -5793,8 +5802,8 @@ class ClassIndexContext::Private
     }
     TemplateVariant title() const
     {
-      static bool fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
-      static bool vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      static bool fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
+      static bool vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
       if (fortranOpt)
       {
         return theTranslator->trDataTypes();
@@ -5880,7 +5889,7 @@ static int computeNumNodesAtLevel(const TemplateStructIntf *s,int level,int maxL
 
 static int computePreferredDepth(const TemplateListIntf *list,int maxDepth)
 {
-  int preferredNumEntries = Config_getInt("HTML_INDEX_NUM_ENTRIES");
+  int preferredNumEntries = Config_getInt(HTML_INDEX_NUM_ENTRIES);
   int preferredDepth=1;
   if (preferredNumEntries>0)
   {
@@ -5992,7 +6001,7 @@ class ClassHierarchyContext::Private
     }
     TemplateVariant title() const
     {
-      static bool vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      static bool vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
       if (vhdlOpt)
       {
         return VhdlDocGen::trDesignUnitHierarchy();
@@ -6228,7 +6237,7 @@ class NestingNodeContext::Private
     }
     QCString relPathAsString() const
     {
-      static bool createSubdirs = Config_getBool("CREATE_SUBDIRS");
+      static bool createSubdirs = Config_getBool(CREATE_SUBDIRS);
       return createSubdirs ? QCString("../../") : QCString("");
     }
     TemplateVariant brief() const
@@ -6513,7 +6522,7 @@ class NestingContext::Private : public GenericNodeListContext
       GroupDef *gd;
       for (gli.toFirst();(gd=gli.current());++gli)
       {
-        static bool externalGroups = Config_getBool("EXTERNAL_GROUPS");
+        static bool externalGroups = Config_getBool(EXTERNAL_GROUPS);
         if (!gd->isASubGroup() && gd->isVisible() &&
              (!gd->isReference() || externalGroups)
            )
@@ -6745,8 +6754,8 @@ class ClassTreeContext::Private
     }
     TemplateVariant title() const
     {
-      static bool fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
-      static bool vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      static bool fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
+      static bool vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
       if (fortranOpt)
       {
         return theTranslator->trCompoundListFortran();
@@ -6913,9 +6922,9 @@ class NamespaceTreeContext::Private
     }
     TemplateVariant title() const
     {
-      static bool javaOpt    = Config_getBool("OPTIMIZE_OUTPUT_JAVA");
-      static bool fortranOpt = Config_getBool("OPTIMIZE_FOR_FORTRAN");
-      static bool vhdlOpt    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+      static bool javaOpt    = Config_getBool(OPTIMIZE_OUTPUT_JAVA);
+      static bool fortranOpt = Config_getBool(OPTIMIZE_FOR_FORTRAN);
+      static bool vhdlOpt    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
       if (javaOpt || vhdlOpt)
       {
         return theTranslator->trPackages();
@@ -7669,7 +7678,7 @@ class NavPathElemContext::Private
     }
     QCString relPathAsString() const
     {
-      static bool createSubdirs = Config_getBool("CREATE_SUBDIRS");
+      static bool createSubdirs = Config_getBool(CREATE_SUBDIRS);
       return createSubdirs ? QCString("../../") : QCString("");
     }
     TemplateVariant externalReference() const
@@ -8303,8 +8312,8 @@ class InheritanceGraphContext::Private
     TemplateVariant graph() const
     {
       QGString result;
-      static bool haveDot            = Config_getBool("HAVE_DOT");
-      static bool graphicalHierarchy = Config_getBool("GRAPHICAL_HIERARCHY");
+      static bool haveDot            = Config_getBool(HAVE_DOT);
+      static bool graphicalHierarchy = Config_getBool(GRAPHICAL_HIERARCHY);
       if (haveDot && graphicalHierarchy)
       {
         FTextStream t(&result);
@@ -8638,7 +8647,7 @@ class AllMembersListContext::Private : public GenericNodeListContext
     {
       if (ml)
       {
-        static bool hideUndocMembers = Config_getBool("HIDE_UNDOC_MEMBERS");
+        static bool hideUndocMembers = Config_getBool(HIDE_UNDOC_MEMBERS);
         MemberNameInfoSDict::Iterator mnii(*ml);
         MemberNameInfo *mni;
         for (mnii.toFirst();(mni=mnii.current());++mnii)
@@ -10158,18 +10167,18 @@ void generateOutputViaTemplate()
       //%% string space
       ctx->set("space"," ");
 
-      //if (Config_getBool("GENERATE_HTML"))
+      //if (Config_getBool(GENERATE_HTML))
       { // render HTML output
         Template *tpl = e.loadByName("htmllayout.tpl",1);
         if (tpl)
         {
           g_globals.outputFormat = ContextOutputFormat_Html;
           g_globals.dynSectionId = 0;
-          g_globals.outputDir    = Config_getString("HTML_OUTPUT");
+          g_globals.outputDir    = Config_getString(HTML_OUTPUT);
           QDir dir(g_globals.outputDir);
           createSubDirs(dir);
           HtmlEscaper htmlEsc;
-          ctx->setEscapeIntf(Config_getString("HTML_FILE_EXTENSION"),&htmlEsc);
+          ctx->setEscapeIntf(Config_getString(HTML_FILE_EXTENSION),&htmlEsc);
           HtmlSpaceless spl;
           ctx->setSpacelessIntf(&spl);
           ctx->setOutputDirectory(g_globals.outputDir);
@@ -10181,7 +10190,7 @@ void generateOutputViaTemplate()
 
       // TODO: clean index before each run...
 
-      //if (Config_getBool("GENERATE_LATEX"))
+      //if (Config_getBool(GENERATE_LATEX))
       if (0)
       { // render LaTeX output
         Template *tpl = e.loadByName("latexlayout.tpl",1);
@@ -10189,7 +10198,7 @@ void generateOutputViaTemplate()
         {
           g_globals.outputFormat = ContextOutputFormat_Latex;
           g_globals.dynSectionId = 0;
-          g_globals.outputDir    = Config_getString("LATEX_OUTPUT");
+          g_globals.outputDir    = Config_getString(LATEX_OUTPUT);
           QDir dir(g_globals.outputDir);
           createSubDirs(dir);
           LatexEscaper latexEsc;

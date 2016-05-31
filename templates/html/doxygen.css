@@ -173,7 +173,7 @@ pre.fragment {
 }
 
 div.fragment {
-        padding: 4px 6px;
+        padding: 0px;
         margin: 4px 8px 4px 2px;
 	background-color: ##FC;
 	border: 1px solid ##CC;
@@ -232,6 +232,15 @@ span.lineno a:hover {
 	background-color: #C8C8C8;
 }
 
+.lineno {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
 div.ah, span.ah {
 	background-color: black;
 	font-weight: bold;
@@ -247,7 +256,7 @@ div.ah, span.ah {
 	-webkit-box-shadow: 2px 2px 3px #999;
 	-moz-box-shadow: rgba(0, 0, 0, 0.15) 2px 2px 2px;
 	background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),color-stop(0.3, #444));
-	background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000);
+	background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000 110%);
 }
 
 div.classindex ul {
@@ -1008,6 +1017,18 @@ div.summary
 div.summary a
 {
 	white-space: nowrap;
+}
+
+table.classindex
+{
+        margin: 10px;
+        white-space: nowrap;
+        margin-left: 3%;
+        margin-right: 3%;
+        width: 94%;
+        border: 0;
+        border-spacing: 0; 
+        padding: 0;
 }
 
 div.ingroups

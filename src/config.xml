@@ -164,6 +164,10 @@
 		<option type="bool" id="MARKDOWN_SUPPORT" defval="1">
 			<docs><![CDATA[ If the \c MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all  comments according to the Markdown format, which allows for more readable  documentation. See http://daringfireball.net/projects/markdown/ for details.  The output of markdown processing is further processed by doxygen, so you  can mix doxygen, HTML, and XML commands with Markdown formatting.  Disable only in case of backward compatibilities issues. ]]></docs>
 		</option>
+		<option type="int" id="TOC_INCLUDE_HEADINGS" minval="0" maxval="99" defval="0"
+			 depends="MARKDOWN_SUPPORT">
+			<docs><![CDATA[ When the \c TOC_INCLUDE_HEADINGS tag is set to a non-zero value, all headings up to that level are automatically included in the table of contents, even if they do not have an id attribute. \note This feature currently applies only to Markdown headings.]]></docs>
+		</option>
 		<option type="bool" id="AUTOLINK_SUPPORT" defval="1">
 			<docs><![CDATA[ When enabled doxygen tries to link words that correspond to documented classes,  or namespaces to their corresponding documentation. Such a link can be  prevented in individual cases by putting a \c % sign in front of the word or  globally by setting \c AUTOLINK_SUPPORT to \c NO.]]></docs>
 		</option>
@@ -195,7 +199,7 @@
 			<docs><![CDATA[ When the \c INLINE_SIMPLE_STRUCTS tag is set to \c YES, structs, classes, and  unions with only public data fields or simple typedef fields will be shown  inline in the documentation of the scope in which they are defined (i.e. file,  namespace, or group documentation), provided this scope is documented. If set  to \c NO, structs, classes, and unions are shown on a separate  page (for HTML and Man pages) or section (for \f$\mbox{\LaTeX}\f$ and RTF).]]></docs>
 		</option>
 		<option type="bool" id="TYPEDEF_HIDES_STRUCT" defval="0">
-			<docs><![CDATA[ When \c TYPEDEF_HIDES_STRUCT tag is enabled, a typedef of a struct, union, or enum is documented as struct, union, or enum with the name of the typedef. So  <code>typedef struct TypeS {} TypeT</code>, will appear in the documentation as a struct  with name \c TypeT. When disabled the typedef will appear as a member of a file, namespace, or class. And the struct will be named \c TypeS. This can typically  be useful for C code in case the coding convention dictates that all compound  types are typedef'ed and only the typedef is referenced, never the tag name.]]></docs>
+			<docs><![CDATA[ When \c TYPEDEF_HIDES_STRUCT tag is enabled, a typedef of a struct, union, or enum is documented as struct, union, or enum with the name of the typedef. So  <code>typedef struct TypeS {} TypeT</code>, will appear in the documentation as a struct  with name \c TypeT. When disabled the typedef will appear as a member of a file,  namespace, or class. And the struct will be named \c TypeS. This can typically  be useful for C code in case the coding convention dictates that all compound  types are typedef'ed and only the typedef is referenced, never the tag name.]]></docs>
 		</option>
 		<option type="int" id="LOOKUP_CACHE_SIZE" minval="0" maxval="9" defval="0">
 			<!-- be carefull when changing these formulas as they are hard coded in the conversion script -->
@@ -256,7 +260,7 @@
 			<docs><![CDATA[ If the SHOW_GROUPED_MEMB_INC tag is set to \c YES then Doxygen  will add for each grouped member an include statement to the documentation, telling the reader which file to include in order to use the member.]]></docs>
 		</option>
 		<option type="bool" id="FORCE_LOCAL_INCLUDES" defval="0">
-			<docs><![CDATA[ If the \c FORCE_LOCAL_INCLUDES tag is set to \c YES then doxygen  will list include files with double quotes in the documentation rather than with sharp brackets.]]></docs>
+			<docs><![CDATA[ If the \c FORCE_LOCAL_INCLUDES tag is set to \c YES then doxygen  will list include files with double quotes in the documentation  rather than with sharp brackets.]]></docs>
 		</option>
 		<option type="bool" id="INLINE_INFO" defval="1">
 			<docs><![CDATA[ If the \c INLINE_INFO tag is set to \c YES then a tag [inline] is inserted in the documentation for inline members.]]></docs>
@@ -334,6 +338,9 @@
 		<option type="bool" id="WARN_NO_PARAMDOC" defval="0">
 			<docs><![CDATA[ This \c WARN_NO_PARAMDOC option can be enabled to get warnings for  functions that are documented, but have no documentation for their parameters or return value. If set to \c NO, doxygen will only warn about wrong or incomplete parameter documentation, but not about the absence of documentation.]]></docs>
 		</option>
+		<option type="bool" id="WARN_AS_ERROR" defval="0">
+			<docs><![CDATA[ If the \c WARN_AS_ERROR tag is set to \c YES then doxygen will immediately stop when a warning is encountered.]]></docs>
+		</option>
 		<option type="string" id="WARN_FORMAT" format="string" defval="$file:$line: $text">
 			<docs><![CDATA[ The \c WARN_FORMAT tag determines the format of the warning messages that doxygen can produce. The string should contain the <code>\$file</code>,  <code>\$line</code>, and <code>\$text</code>  tags, which will be replaced by the file and line number from which the warning originated and the warning text. Optionally the format may contain  <code>$version</code>, which will be replaced by the version of the file (if it could  be obtained via \ref cfg_file_version_filter "FILE_VERSION_FILTER") ]]></docs>
 		</option>
@@ -383,6 +390,7 @@
 			<value name="*.mm"/>
 			<value name="*.dox"/>
 			<value name="*.py"/>
+			<value name="*.pyw"/>
 			<value name="*.f90"/>
 			<value name="*.f"/>
 			<value name="*.for"/>
@@ -391,8 +399,6 @@
 			<value name="*.vhdl"/>
 			<value name="*.ucf"/>
 			<value name="*.qsf"/>
-			<value name="*.as"/>
-			<value name="*.js"/>
 			<value name="*.v"/>
 		</option>
 		<option type="bool" id="RECURSIVE" defval="0">
@@ -408,7 +414,7 @@
 			<docs><![CDATA[ If the value of the \ref cfg_input "INPUT" tag contains directories, you can use the \c EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude certain files from those directories. <br>Note that the wildcards are matched  against the file with absolute path, so to exclude all test directories  for example use the pattern `*``/test/``*`]]></docs>
 		</option>
 		<option type="list" id="EXCLUDE_SYMBOLS" format="string">
-			<docs><![CDATA[ The \c EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names  (namespaces, classes, functions, etc.) that should be excluded from the  output. The symbol name can be a fully qualified name, a word, or if the  wildcard `*` is used, a substring. Examples: `ANamespace`, `AClass`, `AClass::ANamespace`, `ANamespace::*Test`  <br>Note that the wildcards are matched against the file with absolute path,  so to exclude all test directories use the pattern  `*``/test/``*`]]></docs>
+			<docs><![CDATA[ The \c EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names  (namespaces, classes, functions, etc.) that should be excluded from the  output. The symbol name can be a fully qualified name, a word, or if the  wildcard `*` is used, a substring. Examples: `ANamespace`, `AClass`,  `AClass::ANamespace`, `ANamespace::*Test`  <br>Note that the wildcards are matched against the file with absolute path,  so to exclude all test directories use the pattern  `*``/test/``*`]]></docs>
 		</option>
 		<option type="list" id="EXAMPLE_PATH" format="filedir">
 			<docs><![CDATA[ The \c EXAMPLE_PATH tag can be used to specify one or more files or directories that contain example code fragments that are included (see the \ref cmdinclude "\\include" command).]]></docs>
@@ -509,7 +515,7 @@
 		</option>
 		<option type="list" id="HTML_EXTRA_STYLESHEET" format="file" defval="" depends="GENERATE_HTML">
 			<docs><![CDATA[ The \c HTML_EXTRA_STYLESHEET tag can be used to specify additional  user-defined cascading style sheets that are included after the standard  style sheets created by doxygen. Using this option one can overrule  certain style aspects. This is preferred over using \ref cfg_html_stylesheet "HTML_STYLESHEET"  since it does not replace the standard style sheet and is therefore more  robust against future updates. Doxygen will copy the style sheet files to  the output directory. \note The order of the extra style sheet files is of importance (e.g. the last style sheet in the list overrules the setting of the previous ones in the list).]]></docs>
-			<docs doxywizard="0" doxyfile="0"><![CDATA[ Here is an example style sheet that gives the contents area a fixed width:\verbatimbody {        background-color: #CCC;        color: black;        margin: 0;}div.contents {        margin-bottom: 10px;        padding: 12px;        margin-left: auto;        margin-right: auto;   width: 960px;        background-color: white;        border-radius: 8px;}#titlearea {        background-color: white;}hr.footer {        display: none;}.footer {        background-color: #AAA;}\endverbatim]]></docs>
+			<docs doxywizard="0" doxyfile="0"><![CDATA[ Here is an example style sheet that gives the contents area a fixed width:\verbatimbody {        background-color: #CCC;        color: black;        margin: 0;}div.contents {     margin-bottom: 10px;        padding: 12px;        margin-left: auto;        margin-right: auto;        width: 960px;        background-color: white;        border-radius: 8px;}#titlearea {        background-color: white;}hr.footer {        display: none;}.footer {        background-color: #AAA;}\endverbatim]]></docs>
 			<docs documentation="0"><![CDATA[ For an example see the documentation.]]></docs>
 		</option>
 		<option type="list" id="HTML_EXTRA_FILES" format="file" depends="GENERATE_HTML">
@@ -542,7 +548,7 @@
 		</option>
 		<option type="string" id="DOCSET_FEEDNAME" format="string" defval="Doxygen generated docs"
 			 depends="GENERATE_DOCSET">
-			<docs><![CDATA[ This tag determines the name of the docset feed. A documentation feed provides an umbrella under which multipledocumentation sets from a single provider (such as a company or product suite)  can be grouped.]]></docs>
+			<docs><![CDATA[ This tag determines the name of the docset feed. A documentation feed provides an umbrella under which multiple documentation sets from a single provider (such as a company or product suite)  can be grouped.]]></docs>
 		</option>
 		<option type="string" id="DOCSET_BUNDLE_ID" format="string" defval="org.doxygen.Project"
 			 depends="GENERATE_DOCSET">
@@ -622,7 +628,7 @@
 			<docs><![CDATA[ If the treeview is enabled (see \ref cfg_generate_treeview "GENERATE_TREEVIEW") then this tag can be used to set the initial width (in pixels) of the frame in which the tree is shown.]]></docs>
 		</option>
 		<option type="bool" id="EXT_LINKS_IN_WINDOW" defval="0" depends="GENERATE_HTML">
-			<docs><![CDATA[ If the \c EXT_LINKS_IN_WINDOW option is set to \c YES, doxygen will open  links to external symbols imported via tag files in a separate window. ]]></docs>
+			<docs><![CDATA[ If the \c EXT_LINKS_IN_WINDOW option is set to \c YES, doxygen will open links to external symbols imported via tag files in a separate window. ]]></docs>
 		</option>
 		<option type="int" id="FORMULA_FONTSIZE" minval="8" maxval="50" defval="10"
 			 depends="GENERATE_HTML">
@@ -642,14 +648,14 @@
 		</option>
 		<option type="string" id="MATHJAX_RELPATH" format="string" defval="http://cdn.mathjax.org/mathjax/latest"
 			 depends="USE_MATHJAX">
-			<docs><![CDATA[ When MathJax is enabled you need to specify the location relative to the  HTML output directory using the \c MATHJAX_RELPATH option. The destination  directory should contain the `MathJax.js` script. For instance, if the \c mathjax  directory is located at the same level as the HTML output directory, then \c MATHJAX_RELPATH should be <code>../mathjax</code>. The default value points to  the MathJax Content Delivery Network so you can quickly see the result without  installing MathJax.  However, it is strongly recommended to install a local  copy of MathJax from http://www.mathjax.org before deployment.]]></docs>
+			<docs><![CDATA[ When MathJax is enabled you need to specify the location relative to the  HTML output directory using the \c MATHJAX_RELPATH option. The destination  directory should contain the `MathJax.js` script. For instance, if the \c mathjax  directory is located at the same level as the HTML output directory, then  \c MATHJAX_RELPATH should be <code>../mathjax</code>. The default value points to  the MathJax Content Delivery Network so you can quickly see the result without  installing MathJax.  However, it is strongly recommended to install a local  copy of MathJax from http://www.mathjax.org before deployment.]]></docs>
 		</option>
 		<option type="list" id="MATHJAX_EXTENSIONS" format="string" depends="USE_MATHJAX">
 			<docs><![CDATA[ The \c MATHJAX_EXTENSIONS tag can be used to specify one or more MathJax extension  names that should be enabled during MathJax rendering. For example\verbatimMATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols\endverbatim]]></docs>
 		</option>
 		<option type="string" id="MATHJAX_CODEFILE" format="string" depends="USE_MATHJAX">
 			<docs><![CDATA[ The \c MATHJAX_CODEFILE tag can be used to specify a file with javascript  pieces of code that will be used on startup of the MathJax code.  See <a href="http://docs.mathjax.org/en/latest/output.html">the MathJax site</a> for more details.]]></docs>
-			<docs doxywizard="0" doxyfile="0"><![CDATA[ As an example to disable the "Math Renderer" menu item in the "Math Settings" menu of MathJax:\verbatimMATHJAX_CODEFILE = disableRenderer.js\endverbatim  with in the file <code>disableRenderer.js</code>:\verbatim  MathJax.Hub.Config({   menuSettings: {    showRenderer: false,   }   });\endverbatim]]></docs>
+			<docs doxywizard="0" doxyfile="0"><![CDATA[ As an example to disable the "Math Renderer" menu item in the "Math Settings" menu of MathJax:\verbatimMATHJAX_CODEFILE = disableRenderer.js\endverbatim  with in the file <code>disableRenderer.js</code>:\verbatim  MathJax.Hub.Config({   menuSettings: {    showRenderer: false,   } });\endverbatim]]></docs>
 			<docs documentation="0"><![CDATA[ For an example see the documentation.]]></docs>
 		</option>
 		<option type="bool" id="SEARCHENGINE" defval="1" depends="GENERATE_HTML">
@@ -854,7 +860,7 @@ put in front of it.
 			<docs><![CDATA[ The \c INCLUDE_PATH tag can be used to specify one or more directories that contain include files that are not input files but should be processed by the preprocessor.]]></docs>
 		</option>
 		<option type="list" id="INCLUDE_FILE_PATTERNS" format="string" depends="ENABLE_PREPROCESSING">
-			<docs><![CDATA[ You can use the \c INCLUDE_FILE_PATTERNS tag to specify one or more wildcard patterns (like `*.h` and `*.hpp`) to filter out the header-files in the  directories. If left blank, the patterns specified with \ref cfg_file_patterns "FILE_PATTERNS" will  be used. ]]></docs>
+			<docs><![CDATA[ You can use the \c INCLUDE_FILE_PATTERNS tag to specify one or more wildcard  patterns (like `*.h` and `*.hpp`) to filter out the header-files in the  directories. If left blank, the patterns specified with \ref cfg_file_patterns "FILE_PATTERNS" will  be used. ]]></docs>
 		</option>
 		<option type="list" id="PREDEFINED" format="string" depends="ENABLE_PREPROCESSING">
 			<docs><![CDATA[ The \c PREDEFINED tag can be used to specify one or more macro names that are defined before the preprocessor is started (similar to the `-D` option of e.g. \c gcc). The argument of the tag is a list of macros of the form: <code>name</code> or <code>name=definition</code> (no spaces).  If the definition and the \c "=" are omitted,  \c "=1" is assumed. To prevent a macro definition from being undefined via \c \#undef or recursively expanded use the <code>:=</code> operator instead of the \c = operator.]]></docs>
@@ -900,7 +906,7 @@ put in front of it.
 			<docs><![CDATA[ If set to \c YES the inheritance and collaboration graphs will hide inheritance and usage relations if the target is undocumented or is not a class.]]></docs>
 		</option>
 		<option type="bool" id="HAVE_DOT" defval="0">
-			<docs><![CDATA[ If you set the \c HAVE_DOT tag to \c YES then doxygen will assume the \c dot tool is available from the \c path. This tool is part of  <a href="http://www.graphviz.org/">Graphviz</a>, a graph  visualization toolkit from AT\&T and Lucent Bell Labs. The other options in  this section have no effect if this option is set to \c NO]]></docs>
+			<docs><![CDATA[ If you set the \c HAVE_DOT tag to \c YES then doxygen will assume the \c dot tool is available from the \c path. This tool is part of  <a href="http://www.graphviz.org/">Graphviz</a>, a graph  visualization toolkit from AT\&T and Lucent Bell Labs. The other options in this section have no effect if this option is set to \c NO]]></docs>
 		</option>
 		<option type="int" id="DOT_NUM_THREADS" defval="0" minval="0" maxval="32"
 			 depends="HAVE_DOT">
@@ -951,7 +957,7 @@ put in front of it.
 			<docs><![CDATA[ If the \c GRAPHICAL_HIERARCHY tag is set to \c YES then  doxygen will graphical hierarchy of all classes instead of a textual one.]]></docs>
 		</option>
 		<option type="bool" id="DIRECTORY_GRAPH" defval="1" depends="HAVE_DOT">
-			<docs><![CDATA[ If the \c DIRECTORY_GRAPH tag is set  to \c YES then doxygen will show the dependencies a directory has on other directories in a graphical way. The dependency relations are determined by the \c \#include relations between the files in the directories.]]></docs>
+			<docs><![CDATA[ If the \c DIRECTORY_GRAPH tag is set to \c YES then doxygen will show the dependencies a directory has on other directories in a graphical way. The dependency relations are determined by the \c \#include relations between the files in the directories.]]></docs>
 		</option>
 		<option type="enum" id="DOT_IMAGE_FORMAT" defval="png" depends="HAVE_DOT">
 			<docs><![CDATA[ The \c DOT_IMAGE_FORMAT tag can be used to set the image format of the images generated by \c dot. For an explanation of the image formats see the section output formats in the documentation of the \c dot tool (<a href="http://www.graphviz.org/">Graphviz</a>). \note If you choose \c svg you need to set  \ref cfg_html_file_extension "HTML_FILE_EXTENSION" to \c xhtml in order to make the SVG files visible in IE 9+ (other browsers do not have this requirement).]]></docs>
@@ -998,7 +1004,7 @@ put in front of it.
 			<docs><![CDATA[ The \c MAX_DOT_GRAPH_DEPTH tag can be used to set the maximum depth of the  graphs generated by \c dot. A depth value of 3 means that only nodes reachable from the root by following a path via at most 3 edges will be shown. Nodes that lay further from the root node will be omitted. Note that setting this option to 1 or 2 may greatly reduce the computation time needed for large code bases. Also note that the size of a graph can be further restricted by \ref cfg_dot_graph_max_nodes "DOT_GRAPH_MAX_NODES". Using a depth of 0 means no depth restriction.]]></docs>
 		</option>
 		<option type="bool" id="DOT_TRANSPARENT" defval="0" depends="HAVE_DOT">
-			<docs><![CDATA[ Set the \c DOT_TRANSPARENT tag to \c YES to generate images with a transparent background. This is disabled by default, because dot on Windows does not  seem to support this out of the box. <br> Warning: Depending on the platform used,  enabling this option may lead to badly anti-aliased labels on the edges of  a graph (i.e. they become hard to read). ]]></docs>
+			<docs><![CDATA[ Set the \c DOT_TRANSPARENT tag to \c YES to generate images with a transparent background. This is disabled by default, because dot on Windows does not  seem to support this out of the box. <br> Warning: Depending on the platform used, enabling this option may lead to badly anti-aliased labels on the edges of  a graph (i.e. they become hard to read). ]]></docs>
 		</option>
 		<option type="bool" id="DOT_MULTI_TARGETS" defval="0" depends="HAVE_DOT">
 			<docs><![CDATA[ Set the \c DOT_MULTI_TARGETS tag to \c YES to allow dot to generate multiple output files in one run (i.e. multiple -o and -T options on the command line). This makes \c dot run faster, but since only newer versions of \c dot (>1.8.10) support this, this feature is disabled by default.]]></docs>
