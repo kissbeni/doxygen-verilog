@@ -9354,7 +9354,7 @@ static void parseFile(ParserInterface *parser,
     BufStr inBuf(fi.size()+4096);
     msg("Preprocessing %s...\n",fn);
     BufStr strBuf(fi.size()+4096);
-    if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG")) 
+    if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG)) 
     {
       VerilogPreProc defProc;
       readInputFile(fileName,strBuf);

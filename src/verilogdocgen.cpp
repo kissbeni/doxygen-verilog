@@ -369,7 +369,7 @@ void VerilogDocGen::writeVerilogDeclarations(MemberDef* mdef,OutputList &ol,
   QCString cfname = mdef->getOutputFileBase();
 
 //  HtmlHelp *htmlHelp=0;
-//  bool hasHtmlHelp = Config_getBool("GENERATE_HTML") && Config_getBool("GENERATE_HTMLHELP");
+//  bool hasHtmlHelp = Config_getBool(GENERATE_HTML) && Config_getBool(GENERATE_HTMLHELP);
 //  if (hasHtmlHelp) htmlHelp = HtmlHelp::getInstance();
 
   // search for the last anonymous scope in the member type
@@ -433,11 +433,11 @@ void VerilogDocGen::writeVerilogDeclarations(MemberDef* mdef,OutputList &ol,
       fdd=findFileDef(Doxygen::inputNameDict,largs.data(),ambig);
       if(fdd)
       {
-        QCString fbb=fdd->getFileBase();
-        fbb=fdd->getReference();
-        fbb= fdd->getOutputFileBase();
-        fbb=fdd->getSourceFileBase();
-        fbb=fdd->convertNameToFile(largs.data(),true);
+        QCString fbb;//=fdd->getFileBase();
+        //fbb=fdd->getReference();
+        //fbb= fdd->getOutputFileBase();
+        //fbb=fdd->getSourceFileBase();
+        //fbb=fdd->convertNameToFile(largs.data(),true);
         fbb=fdd->getPath();
         fbb+=fdd->getOutputFileBase()+".html";
 
@@ -576,7 +576,7 @@ void VerilogDocGen::writeVerilogDeclarations(MemberDef* mdef,OutputList &ol,
   //    name().data(),annoClassDef,annEnumType);
   ol.endMemberItem();
 //fprintf(stderr,"\n%d %s",mdef->docLine,mdef->name().data());
-  if (!mdef->briefDescription().isEmpty() &&   Config_getBool("BRIEF_MEMBER_DESC") /* && !annMemb */)
+  if (!mdef->briefDescription().isEmpty() &&   Config_getBool(BRIEF_MEMBER_DESC) /* && !annMemb */)
   {
     ol.startMemberDescription(mdef->anchor());
     ol.generateDoc(mdef->briefFile(),mdef->briefLine(),mdef->getOuterScope()?mdef->getOuterScope():d,mdef,mdef->briefDescription(),TRUE,FALSE,0,TRUE,FALSE);
@@ -1006,7 +1006,7 @@ ol.docify(":");
 void VerilogDocGen::writeSource(MemberDef *mdef,OutputList& ol,QCString & cname)
 {
   //  Definition d=(Definition)mdef;
-  static bool optVerilog = Config_getBool("OPTIMIZE_OUTPUT_VERILOG");
+  static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
  /*
   if(optVerilog){
   VerilogDocGen::writeSource(mdef,ol,cname);
@@ -1056,7 +1056,7 @@ const char* VerilogDocGen::removeLastWord(const char* word)
 
 QCString VerilogDocGen::findFile(const char *fileName)
 {
-  QStrList &includePath = Config_getList("INCLUDE_PATH");
+  QStrList &includePath = Config_getList(INCLUDE_PATH);
 
   char *s=includePath.first();
 

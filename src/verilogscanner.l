@@ -515,7 +515,7 @@ void writeVerilogFont(const char* col,const char* text)
 // writes a coloured word to the  output
 
 static void writeVWord(QCString& qcs){
-static bool stripComment=Config_getBool("STRIP_CODE_COMMENTS");
+static bool stripComment=Config_getBool(STRIP_CODE_COMMENTS);
    if(qcs.isEmpty())return;
     QCString temp=qcs;
 	if(qcs.stripPrefix("\n")){
@@ -770,7 +770,7 @@ static void writeMultiLineCodeLink(CodeOutputInterface &ol,
                   const char *ref,const char *file,
                   const char *anchor,const char *text,Definition *d)
 {
-   static bool sourceTooltips = Config_getBool("SOURCE_TOOLTIPS");
+   static bool sourceTooltips = Config_getBool(SOURCE_TOOLTIPS);
  
   TooltipManager::instance()->addTooltip(d);
 
@@ -1264,7 +1264,7 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
 				 	if(g_parseCode)
 				 	{
                       QCString *yy=0;
-                     if(Config_getBool("MACRO_EXPANSION") && def)
+                     if(Config_getBool(MACRO_EXPANSION) && def)
                      {
                         yy=new QCString(def->definition.data());
                       //   VhdlDocGen::deleteAllChars(*yy,'"');   
@@ -1283,7 +1283,7 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
 				    }
 				  	
 				  	// if(!def) && !def->definition.isEmpty())
-					// if(Config_getBool("WARNINGS"))
+					// if(Config_getBool(WARNINGS))
 					//  warn(yyFileName,yyLineNr,"\n macro %s is not defined",verilogScanYYtext);		  
 							
 							if(!verilogDefineDict.find(s1)) 
@@ -1419,7 +1419,7 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
                       
      }
 					 if(g_parseCode) {
-					 if(Config_getBool("STRIP_CODE_COMMENTS"))
+					 if(Config_getBool(STRIP_CODE_COMMENTS))
 					      qlist.append(new QCString(verilogScanYYtext)); 
 					 else{
 					     QStringList ql=QStringList::split('\n',text,false);
@@ -1487,7 +1487,7 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
    unput(*verilogScanYYtext);
    }
    
-   if(g_parseCode) // && !Config_getBool("STRIP_CODE_COMMENTS"))
+   if(g_parseCode) // && !Config_getBool(STRIP_CODE_COMMENTS))
    { 
      qlist.append(new QCString(verilogScanYYtext)); 
    } 
@@ -1528,7 +1528,7 @@ GATETYPE  	"and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"n
    }
  }//if
   
-  if(g_parseCode) // && !Config_getBool("STRIP_CODE_COMMENTS"))
+  if(g_parseCode) // && !Config_getBool(STRIP_CODE_COMMENTS))
    { 
      qlist.append(new QCString(verilogScanYYtext)); 
    } 
@@ -1896,7 +1896,7 @@ for(uint j=0;j<qsl.count();j++)
                     g_code = &codeOutIntf;
                 		  
                    QCString ff(yyFileName);
-                   if (Config_getBool("ENABLE_PREPROCESSING") && startLine==-1)
+                   if (Config_getBool(ENABLE_PREPROCESSING) && startLine==-1)
                      {
                        VerilogPreProc defProc;
                        defProc.lineDirectives(false);

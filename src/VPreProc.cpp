@@ -1767,7 +1767,7 @@ void  VerilogPreProc::getPredefs()
     // add predefined macros
     DefineDict* preDict=VerilogPreProc::getPreDefineDict();
     char *defStr;
-    QStrList &predefList = Config_getList("PREDEFINED");
+    QStrList &predefList = Config_getList(PREDEFINED);
     QStrListIterator sli(predefList);
     for (sli.toFirst();(defStr=sli.current());++sli)
     {

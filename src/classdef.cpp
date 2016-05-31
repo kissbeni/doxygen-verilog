@@ -439,7 +439,7 @@ void ClassDef::internalInsertMember(MemberDef *md,
   //printf("insertInternalMember(%s) isHidden()=%d\n",md->name().data(),md->isHidden());
   if (md->isHidden()) return;
 /*
-  static bool optVerilog    = Config_getBool("OPTIMIZE_OUTPUT_VHDL");
+  static bool optVerilog    = Config_getBool(OPTIMIZE_OUTPUT_VHDL);
   if(optVerilog)
   {
     QCString tti=VhdlDocGen::trVhdlType(md->getMemberSpecifiers(),false);
@@ -1507,7 +1507,7 @@ void ClassDef::endMemberDeclarations(OutputList &ol)
   static bool inlineInheritedMembers = Config_getBool(INLINE_INHERITED_MEMB);
   if (!inlineInheritedMembers && countAdditionalInheritedMembers()>0)
   {
-    if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+    if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG))
     {
       ol.endMemberSections();
       return;

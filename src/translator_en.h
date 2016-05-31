@@ -1855,7 +1855,7 @@ class TranslatorEnglish : public Translator
     virtual QCString trEnumGeneratedFromFiles(bool single)
     {
       QCString result;
-      if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+      if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG))
         result = "The documentation for this module was generated from the following file";
       else
         result = "The documentation for this enum was generated from the following file";
@@ -1867,7 +1867,7 @@ class TranslatorEnglish : public Translator
     /*! Header of a Java enum page (Java enums are represented as classes). */
     virtual QCString trEnumReference(const char *name)
     {
-      if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))	
+      if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG))	
         return QCString(name)+" Module Reference";
       else
        return QCString(name)+" Enum Reference";

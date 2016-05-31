@@ -2128,7 +2128,7 @@ void parseListOfPorts() {
   QCString type;
 
  QCString mod(getVerilogString());
- if(Config_getBool("HIDE_PORT")) return;
+ if(Config_getBool(HIDE_PORT)) return;
  VhdlDocGen::deleteAllChars(mod,' ');
  VhdlDocGen::deleteAllChars(mod,'\n');
  VhdlDocGen::deleteAllChars(mod,';');

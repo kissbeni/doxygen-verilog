@@ -640,7 +640,7 @@ void MemberDefImpl::init(Definition *def,
   type=removeRedundantWhiteSpace(type);
   args=a;
   args=removeRedundantWhiteSpace(args);
-  if(Config_getBool("OPTIMIZE_OUTPUT_VERILOG"))
+  if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG))
   {
     QCString nn=def->name();
     VerilogDocGen::adjustOpName(nn);
