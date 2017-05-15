@@ -2575,38 +2575,40 @@ static void writeClassMemberIndexFiltered(OutputList &ol, ClassMemberHighlight h
     if (!disableIndex)
     {
       ol.writeQuickLinks(TRUE,HLI_Functions,0);
-#if 0
-      startQuickIndexList(ol);
 
-      // index item for global member list
-      startQuickIndexItem(ol,
-          getCmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==CMHL_All,TRUE,first);
-      ol.writeString(fixSpaces(getCmhlInfo(0)->title));
-      endQuickIndexItem(ol);
-
-      int i;
-      // index items per category member lists
-      for (i=1;i<CMHL_Total;i++)
+      if (!Config_getBool(HTML_DYNAMIC_MENUS))
       {
-        if (documentedClassMembers[i]>0)
+        startQuickIndexList(ol);
+
+        // index item for global member list
+        startQuickIndexItem(ol,
+            getCmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==CMHL_All,TRUE,first);
+        ol.writeString(fixSpaces(getCmhlInfo(0)->title));
+        endQuickIndexItem(ol);
+
+        int i;
+        // index items per category member lists
+        for (i=1;i<CMHL_Total;i++)
         {
-          startQuickIndexItem(ol,getCmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
-          ol.writeString(fixSpaces(getCmhlInfo(i)->title));
-          //printf("multiPageIndex=%d first=%d fileName=%s file=%s title=%s\n",
-          //    multiPageIndex,first,fileName.data(),getCmhlInfo(i)->fname,getCmhlInfo(i)->title.data());
-          endQuickIndexItem(ol);
+          if (documentedClassMembers[i]>0)
+          {
+            startQuickIndexItem(ol,getCmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
+            ol.writeString(fixSpaces(getCmhlInfo(i)->title));
+            //printf("multiPageIndex=%d first=%d fileName=%s file=%s title=%s\n",
+            //    multiPageIndex,first,fileName.data(),getCmhlInfo(i)->fname,getCmhlInfo(i)->title.data());
+            endQuickIndexItem(ol);
+          }
+        }
+
+        endQuickIndexList(ol);
+
+        // quick alphabetical index
+        if (quickIndex)
+        {
+          writeQuickMemberIndex(ol,g_memberIndexLetterUsed[hl],page,
+              getCmhlInfo(hl)->fname,multiPageIndex);
         }
       }
-
-      endQuickIndexList(ol);
-
-      // quick alphabetical index
-      if (quickIndex)
-      {
-        writeQuickMemberIndex(ol,g_memberIndexLetterUsed[hl],page,
-            getCmhlInfo(hl)->fname,multiPageIndex);
-      }
-#endif
     }
     ol.endQuickIndices();
     ol.writeSplitBar(fileName);
@@ -2749,36 +2751,37 @@ static void writeFileMemberIndexFiltered(OutputList &ol, FileMemberHighlight hl)
     if (!disableIndex)
     {
       ol.writeQuickLinks(TRUE,HLI_Globals,0);
-#if 0
-      startQuickIndexList(ol);
-
-      // index item for all file member lists
-      startQuickIndexItem(ol,
-          getFmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==FMHL_All,TRUE,first);
-      ol.writeString(fixSpaces(getFmhlInfo(0)->title));
-      endQuickIndexItem(ol);
-
-      int i;
-      // index items for per category member lists
-      for (i=1;i<FMHL_Total;i++)
+      if (!Config_getBool(HTML_DYNAMIC_MENUS))
       {
-        if (documentedFileMembers[i]>0)
+        startQuickIndexList(ol);
+
+        // index item for all file member lists
+        startQuickIndexItem(ol,
+            getFmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==FMHL_All,TRUE,first);
+        ol.writeString(fixSpaces(getFmhlInfo(0)->title));
+        endQuickIndexItem(ol);
+
+        int i;
+        // index items for per category member lists
+        for (i=1;i<FMHL_Total;i++)
         {
-          startQuickIndexItem(ol,
-              getFmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
-          ol.writeString(fixSpaces(getFmhlInfo(i)->title));
-          endQuickIndexItem(ol);
+          if (documentedFileMembers[i]>0)
+          {
+            startQuickIndexItem(ol,
+                getFmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
+            ol.writeString(fixSpaces(getFmhlInfo(i)->title));
+            endQuickIndexItem(ol);
+          }
+        }
+
+        endQuickIndexList(ol);
+
+        if (quickIndex)
+        {
+          writeQuickMemberIndex(ol,g_fileIndexLetterUsed[hl],page,
+              getFmhlInfo(hl)->fname,multiPageIndex);
         }
       }
-
-      endQuickIndexList(ol);
-
-      if (quickIndex)
-      {
-        writeQuickMemberIndex(ol,g_fileIndexLetterUsed[hl],page,
-            getFmhlInfo(hl)->fname,multiPageIndex);
-      }
-#endif
     }
     ol.endQuickIndices();
     ol.writeSplitBar(fileName);
@@ -2919,36 +2922,37 @@ static void writeNamespaceMemberIndexFiltered(OutputList &ol,
     if (!disableIndex)
     {
       ol.writeQuickLinks(TRUE,HLI_NamespaceMembers,0);
-#if 0
-      startQuickIndexList(ol);
-
-      // index item for all namespace member lists
-      startQuickIndexItem(ol,
-          getNmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==NMHL_All,TRUE,first);
-      ol.writeString(fixSpaces(getNmhlInfo(0)->title));
-      endQuickIndexItem(ol);
-
-      int i;
-      // index items per category member lists
-      for (i=1;i<NMHL_Total;i++)
+      if (!Config_getBool(HTML_DYNAMIC_MENUS))
       {
-        if (documentedNamespaceMembers[i]>0)
+        startQuickIndexList(ol);
+
+        // index item for all namespace member lists
+        startQuickIndexItem(ol,
+            getNmhlInfo(0)->fname+Doxygen::htmlFileExtension,hl==NMHL_All,TRUE,first);
+        ol.writeString(fixSpaces(getNmhlInfo(0)->title));
+        endQuickIndexItem(ol);
+
+        int i;
+        // index items per category member lists
+        for (i=1;i<NMHL_Total;i++)
         {
-          startQuickIndexItem(ol,
-              getNmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
-          ol.writeString(fixSpaces(getNmhlInfo(i)->title));
-          endQuickIndexItem(ol);
+          if (documentedNamespaceMembers[i]>0)
+          {
+            startQuickIndexItem(ol,
+                getNmhlInfo(i)->fname+Doxygen::htmlFileExtension,hl==i,TRUE,first);
+            ol.writeString(fixSpaces(getNmhlInfo(i)->title));
+            endQuickIndexItem(ol);
+          }
+        }
+
+        endQuickIndexList(ol);
+
+        if (quickIndex)
+        {
+          writeQuickMemberIndex(ol,g_namespaceIndexLetterUsed[hl],page,
+              getNmhlInfo(hl)->fname,multiPageIndex);
         }
       }
-
-      endQuickIndexList(ol);
-
-      if (quickIndex)
-      {
-        writeQuickMemberIndex(ol,g_namespaceIndexLetterUsed[hl],page,
-            getNmhlInfo(hl)->fname,multiPageIndex);
-      }
-#endif
     }
     ol.endQuickIndices();
     ol.writeSplitBar(fileName);
@@ -2974,6 +2978,7 @@ static void writeNamespaceMemberIndexFiltered(OutputList &ol,
         g_namespaceIndexLetterUsed[hl],
         Definition::TypeNamespace);
     endFile(ol);
+    first=FALSE;
   }
   if (multiPageIndex && addToIndex) Doxygen::indexList->decContentsDepth();
   ol.popGeneratorState();
@@ -4331,8 +4336,8 @@ void renderMemberIndicesAsJs(FTextStream &t,
         t << "children:[";
         firstMember=FALSE;
       }
-      t << endl << "{text:'" << convertToJSString(getInfo(i)->title) << "',url:'"
-        << convertToJSString(getInfo(i)->fname+Doxygen::htmlFileExtension) << "'";
+      t << endl << "{text:\"" << convertToJSString(getInfo(i)->title) << "\",url:\""
+        << convertToJSString(getInfo(i)->fname+Doxygen::htmlFileExtension) << "\"";
 
       // Check if we have many members, then add sub entries per letter...
       // quick alphabetical index
@@ -4361,8 +4366,8 @@ void renderMemberIndicesAsJs(FTextStream &t,
             anchor=fullName+extension+"#index_";
           else // other pages of multi page index
             anchor=fullName+"_"+is+extension+"#index_";
-          t << "{text:'" << convertToJSString(ci) << "',url:'"
-            << convertToJSString(anchor+is) << "'}";
+          t << "{text:\"" << convertToJSString(ci) << "\",url:\""
+            << convertToJSString(anchor+is) << "\"}";
           firstLetter=FALSE;
         }
         t << "]";
@@ -4397,8 +4402,8 @@ static bool renderQuickLinksAsJs(FTextStream &t,LayoutNavEntry *root,bool first)
         if (!firstChild) t << "," << endl;
         firstChild=FALSE;
         QCString url = entry->url();
-        t << "{text:'" << convertToJSString(entry->title()) << "',url:'"
-          << convertToJSString(url) << "'";
+        t << "{text:\"" << convertToJSString(entry->title()) << "\",url:\""
+          << convertToJSString(url) << "\"";
         bool hasChildren=FALSE;
         if (entry->kind()==LayoutNavEntry::NamespaceMembers)
         {

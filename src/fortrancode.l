@@ -24,6 +24,9 @@
        - references to variables
 **/
 %option never-interactive
+%option case-insensitive
+%option prefix="fortrancodeYY"
+
 %{
 
 /*
@@ -484,7 +487,7 @@ static bool getFortranDefs(const QCString &memberName, const QCString &moduleNam
 
   if (mn) // name is known
   {
-      MemberListIterator mli(*mn);
+      MemberNameIterator mli(*mn);
       for (mli.toFirst();(md=mli.current());++mli) // all found functions with given name
       {
         FileDef  *fd=md->getFileDef();
@@ -925,7 +928,12 @@ PREFIX    (RECURSIVE{BS_}|IMPURE{BS_}|PURE{BS_}|ELEMENTAL{BS_}){0,3}(RECURSIVE|I
 					  startScope();
 					  generateLink(*g_code,yytext);
                                         }
-<Subprog>"(".*                          { // ignore rest of line 
+<Subprog>"result"/{BS}"("[^)]*")"       {
+   					  startFontClass("keyword");
+ 					  codifyLines(yytext);
+					  endFontClass();
+                                        }
+<Subprog>"("[^)]*")"                    { // ignore rest of line 
  					  codifyLines(yytext);
                                         }
 <Subprog,Subprogend>"\n"                { codifyLines(yytext);
@@ -1123,6 +1131,16 @@ PREFIX    (RECURSIVE{BS_}|IMPURE{BS_}|PURE{BS_}|ELEMENTAL{BS_}){0,3}(RECURSIVE|I
   					  codifyLines(yytext);
 					  endFontClass();
 					}
+<*>"assignment"/{BS}"("{BS}"="{BS}")"   {
+  					  startFontClass("keyword");
+  					  codifyLines(yytext);
+					  endFontClass();
+					}
+<*>"operator"/{BS}"("[^)]*")"           {
+  					  startFontClass("keyword");
+  					  codifyLines(yytext);
+					  endFontClass();
+					}
 
  /*------ preprocessor  --------------------------------------------*/ 
 <Start>"#".*\n                          {
@@ -1248,15 +1266,16 @@ void parseFortranCode(CodeOutputInterface &od,const char *className,const QCStri
   g_needsTermination = FALSE;
   g_searchCtx = searchCtx;
   g_collectXRefs = collectXRefs;
-  if (endLine!=-1)
-    g_inputLines  = endLine+1;
-  else
-    g_inputLines  = countLines();
-
   if (startLine!=-1)
     g_yyLineNr    = startLine;
   else
     g_yyLineNr    = 1;
+
+  if (endLine!=-1)
+    g_inputLines  = endLine+1;
+  else
+    g_inputLines  = g_yyLineNr + countLines() - 1;
+
 
   g_exampleBlock  = exBlock; 
   g_exampleName   = exName;

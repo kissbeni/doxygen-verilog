@@ -329,7 +329,8 @@ int guessSection(const char *name)
       n.right(4)==".ipp"  ||
       n.right(4)==".i++"  ||
       n.right(4)==".inl"  ||
-      n.right(4)==".xml" 
+      n.right(4)==".xml"  ||
+      n.right(4)==".sql" 
      ) return Entry::SOURCE_SEC;
   if (n.right(2)==".h"   || // header
       n.right(3)==".hh"  ||
@@ -1887,9 +1888,10 @@ QCString removeRedundantWhiteSpace(const QCString &s)
         {
           if (g_charAroundSpace.charMap[(uchar)pc].before &&
               g_charAroundSpace.charMap[(uchar)nc].after  &&
-              !(pc==',' && nc=='.'))
-            // remove spaces/tabs
-          {
+              !(pc==',' && nc=='.') &&
+              (osp<8 || (osp>=8 && isId(nc))) // e.g. "operator >>" -> "operator>>", but not "operator int" -> operatorint"
+             )
+          { // keep space
             *dst++=' ';
           }
         }
@@ -1915,6 +1917,7 @@ QCString removeRedundantWhiteSpace(const QCString &s)
     pc=c;
   }
   *dst++='\0';
+  //printf("removeRedundantWhitespace(%s)->%s\n",s.data(),growBuf);
   return growBuf;
 }
 
@@ -2266,6 +2269,8 @@ QCString argListToString(ArgumentList *al,bool useCanonicalType,bool showDefVals
   result+=")";
   if (al->constSpecifier) result+=" const";
   if (al->volatileSpecifier) result+=" volatile";
+  if (al->refQualifier==RefQualifierLValue) result+=" &";
+  else if (al->refQualifier==RefQualifierRValue) result+=" &&";
   if (!al->trailingReturnType.isEmpty()) result+=" -> "+al->trailingReturnType;
   if (al->pureSpecifier) result+=" =0";
   return removeRedundantWhiteSpace(result);
@@ -3360,6 +3365,12 @@ bool matchArguments(ArgumentList *srcAl,ArgumentList *dstAl,
     }
   }
 
+  if (srcAl->refQualifier != dstAl->refQualifier)
+  {
+    NOMATCH
+    return FALSE; // one member is has a different ref-qualifier than the other
+  }
+
   // so far the argument list could match, so we need to compare the types of
   // all arguments.
   ArgumentListIterator srcAli(*srcAl),dstAli(*dstAl);
@@ -3793,6 +3804,12 @@ bool matchArguments2(Definition *srcScope,FileDef *srcFileScope,ArgumentList *sr
     }
   }
 
+  if (srcAl->refQualifier != dstAl->refQualifier)
+  {
+    NOMATCH
+    return FALSE; // one member is has a different ref-qualifier than the other
+  }
+
   // so far the argument list could match, so we need to compare the types of
   // all arguments.
   ArgumentListIterator srcAli(*srcAl),dstAli(*dstAl);
@@ -3956,7 +3973,7 @@ static void findMembersWithSpecificName(MemberName *mn,
 {
   //printf("  Function with global scope name `%s' args=`%s'\n",
   //       mn->memberName(),args);
-  MemberListIterator mli(*mn);
+  MemberNameIterator mli(*mn);
   MemberDef *md;
   for (mli.toFirst();(md=mli.current());++mli)
   {
@@ -4103,7 +4120,7 @@ bool getDefs(const QCString &scName,
          )
       {
         //printf("  Found fcd=%p\n",fcd);
-        MemberListIterator mmli(*mn);
+        MemberNameIterator mmli(*mn);
         MemberDef *mmd;
         int mdist=maxInheritanceDepth; 
         ArgumentList *argList=0;
@@ -4227,7 +4244,7 @@ bool getDefs(const QCString &scName,
   if (mn && scopeName.isEmpty() && mScope.isEmpty()) // Maybe a related function?
   {
     //printf("Global symbol\n");
-    MemberListIterator mmli(*mn);
+    MemberNameIterator mmli(*mn);
     MemberDef *mmd, *fuzzy_mmd = 0;
     ArgumentList *argList = 0;
     bool hasEmptyArgs = args && qstrcmp(args, "()") == 0;
@@ -4295,7 +4312,7 @@ bool getDefs(const QCString &scName,
         //printf("Symbol inside existing namespace `%s' count=%d\n",
         //    namespaceName.data(),mn->count());
         bool found=FALSE;
-        MemberListIterator mmli(*mn);
+        MemberNameIterator mmli(*mn);
         MemberDef *mmd;
         for (mmli.toFirst();((mmd=mmli.current()) && !found);++mmli)
         {
@@ -4379,7 +4396,7 @@ bool getDefs(const QCString &scName,
       else
       {
         //printf("not a namespace\n");
-        MemberListIterator mmli(*mn);
+        MemberNameIterator mmli(*mn);
         MemberDef *mmd;
         for (mmli.toFirst();(mmd=mmli.current());++mmli)
         {
@@ -4430,7 +4447,7 @@ bool getDefs(const QCString &scName,
       {
         // no exact match found, but if args="()" an arbitrary
         // member will do
-        MemberListIterator mni(*mn);
+        MemberNameIterator mni(*mn);
         for (mni.toLast();(md=mni.current());--mni)
         {
           //printf("Found member `%s'\n",md->name().data());
@@ -6131,7 +6148,7 @@ QCString normalizeNonTemplateArgumentsInString(
   p++;
   QCString result = name.left(p);
 
-  static QRegExp re("[a-z_A-Z\\x80-\\xFF][a-z_A-Z0-9\\x80-\\xFF]*");
+  static QRegExp re("[a-z:_A-Z\\x80-\\xFF][a-z:_A-Z0-9\\x80-\\xFF]*");
   int l,i;
   // for each identifier in the template part (e.g. B<T> -> T)
   while ((i=re.match(name,p,&l))!=-1)
@@ -6744,6 +6761,7 @@ QCString latexEscapeLabelName(const char *s,bool insideTabbing)
     {
       case '|': t << "\\texttt{\"|}"; break;
       case '!': t << "\"!"; break;
+      case '@': t << "\"@"; break;
       case '%': t << "\\%";       break;
       case '{': t << "\\lcurly{}"; break;
       case '}': t << "\\rcurly{}"; break;
@@ -6753,7 +6771,7 @@ QCString latexEscapeLabelName(const char *s,bool insideTabbing)
         i=0;
         // collect as long string as possible, before handing it to docify
         tmp[i++]=c;
-        while ((c=*p) && c!='|' && c!='!' && c!='%' && c!='{' && c!='}' && c!='~')
+        while ((c=*p) && c!='@' && c!='[' && c!=']' && c!='!' && c!='{' && c!='}' && c!='|')
         {
           tmp[i++]=c;
           p++;
@@ -7045,6 +7063,7 @@ g_lang2extMap[] =
   { "vhdl",        "vhdl",          SrcLangExt_VHDL     },
   { "v",           "v",             SrcLangExt_VERILOG  },
   { "xml",         "xml",           SrcLangExt_XML      },
+  { "sql",         "sql",           SrcLangExt_SQL      },
   { "tcl",         "tcl",           SrcLangExt_Tcl      },
   { "md",          "md",            SrcLangExt_Markdown },
   { 0,             0,              (SrcLangExt)0        }
@@ -7133,6 +7152,9 @@ void initDefaultExtensionMapping()
   updateLanguageMapping(".f",        "fortran");
   updateLanguageMapping(".for",      "fortran");
   updateLanguageMapping(".f90",      "fortran");
+  updateLanguageMapping(".f95",      "fortran");
+  updateLanguageMapping(".f03",      "fortran");
+  updateLanguageMapping(".f08",      "fortran");
   updateLanguageMapping(".vhd",      "vhdl");
   updateLanguageMapping(".v",        "v");
   updateLanguageMapping(".vhdl",     "vhdl");
@@ -7146,6 +7168,7 @@ void initDefaultExtensionMapping()
 void addCodeOnlyMappings()
 {
   updateLanguageMapping(".xml",   "xml");
+  updateLanguageMapping(".sql",   "sql");
 }
 
 SrcLangExt getLanguageFromFileName(const QCString fileName)
@@ -8084,6 +8107,7 @@ bool copyFile(const QCString &src,const QCString &dest)
 
 /** Returns the section of text, in between a pair of markers. 
  *  Full lines are returned, excluding the lines on which the markers appear.
+ *  \sa routine lineBlock
  */
 QCString extractBlock(const QCString text,const QCString marker)
 {
@@ -8127,6 +8151,29 @@ QCString extractBlock(const QCString text,const QCString marker)
   return l2>l1 ? text.mid(l1,l2-l1) : QCString();
 }
 
+/** Returns the line number of the line following the line with the marker.
+ *  \sa routine extractBlock
+ */
+int lineBlock(const QCString text,const QCString marker)
+{
+  int result = 1;
+  int p=0,i;
+  bool found=FALSE;
+
+  // find the character positions of the first marker
+  int m1 = text.find(marker);
+  if (m1==-1) return result;
+
+  // find start line positions for the markers
+  while (!found && (i=text.find('\n',p))!=-1)
+  {
+    found = (p<=m1 && m1<i); // found the line with the start marker
+    p=i+1;
+    result++;
+  }
+  return result;
+}
+
 /** Returns a string representation of \a lang. */
 QCString langToString(SrcLangExt lang)
 {
@@ -8146,6 +8193,7 @@ QCString langToString(SrcLangExt lang)
     case SrcLangExt_VHDL:     return "VHDL";
     case SrcLangExt_VERILOG:  return "Verilog";
     case SrcLangExt_XML:      return "XML";
+    case SrcLangExt_SQL:      return "SQL";
     case SrcLangExt_Tcl:      return "Tcl";
     case SrcLangExt_Markdown: return "Markdown";
   }
@@ -8371,7 +8419,7 @@ uint getUtf8CodeToLower( const QCString& s, int idx )
 }
 
 
-/*! @brief Returns one unicode character as ian unsigned interger 
+/*! @brief Returns one unicode character as an unsigned integer 
  *  from utf-8 string, making the character upper case if it was lower case.
  *
  * @param s utf-8 encoded string

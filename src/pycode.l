@@ -22,6 +22,8 @@
  */
 
 %option never-interactive
+%option prefix="pycodeYY"
+
 %{
 
 #include <stdio.h>
@@ -1007,7 +1009,15 @@ TARGET           ({IDENTIFIER}|"("{TARGET_LIST}")"|"["{TARGET_LIST}"]"|{ATTRIBUT
 					codify(yytext);
 					endFontClass();
 				    }
+      "self."{IDENTIFIER}/"."({IDENTIFIER}".")*{IDENTIFIER}"(" {
+				        codify("self.");
+				        findMemberLink(*g_code,&yytext[5]);
+	                            }
       "self."{IDENTIFIER}/"("       {
+				        codify("self.");
+				        findMemberLink(*g_code,&yytext[5]);
+	                            }
+      "self."{IDENTIFIER}/"."({IDENTIFIER}".")*{IDENTIFIER} {
 				        codify("self.");
 				        findMemberLink(*g_code,&yytext[5]);
 	                            }
@@ -1015,7 +1025,15 @@ TARGET           ({IDENTIFIER}|"("{TARGET_LIST}")"|"["{TARGET_LIST}"]"|{ATTRIBUT
 				        codify("self.");
 				        findMemberLink(*g_code,&yytext[5]);
 	                            }
+      "cls."{IDENTIFIER}/"."({IDENTIFIER}".")*{IDENTIFIER}"(" {
+				        codify("cls.");
+				        findMemberLink(*g_code,&yytext[4]);
+	                            }
       "cls."{IDENTIFIER}/"("       {
+				        codify("cls.");
+				        findMemberLink(*g_code,&yytext[4]);
+	                            }
+      "cls."{IDENTIFIER}/"."({IDENTIFIER}".")*{IDENTIFIER} {
 				        codify("cls.");
 				        findMemberLink(*g_code,&yytext[4]);
 	                            }
@@ -1124,6 +1142,10 @@ TARGET           ({IDENTIFIER}|"("{TARGET_LIST}")"|"["{TARGET_LIST}"]"|{ATTRIBUT
 
     ")"                             {
                                          codify(yytext);
+                                    }
+
+    "\n"                            {
+				         codifyLines(yytext);
                                     }
 
     ":"                             {
@@ -1402,7 +1424,7 @@ TARGET           ({IDENTIFIER}|"("{TARGET_LIST}")"|"["{TARGET_LIST}"]"|{ATTRIBUT
 				  unput(*yytext);
 				  yy_pop_state();
 			       }
-<*>{POUNDCOMMENT}              {
+<*>{POUNDCOMMENT}.*            {
   				 if (YY_START==SingleQuoteString || 
 				     YY_START==DoubleQuoteString || 
 				     YY_START==TripleString
@@ -1514,8 +1536,8 @@ static void adjustScopesAndSuites(unsigned indentLength)
 
 void parsePythonCode(CodeOutputInterface &od,const char * /*className*/,
                  const QCString &s,bool exBlock, const char *exName,
-		 FileDef *fd,int startLine,int endLine,bool /*inlineFragment*/,
-		 MemberDef *,bool,Definition *searchCtx,bool collectXRefs) 
+                 FileDef *fd,int startLine,int endLine,bool inlineFragment,
+                 MemberDef *,bool,Definition *searchCtx,bool collectXRefs) 
 {
 
   //printf("***parseCode()\n");
@@ -1531,22 +1553,22 @@ void parsePythonCode(CodeOutputInterface &od,const char * /*className*/,
   g_needsTermination = FALSE;
   g_searchCtx=searchCtx;
   g_collectXRefs=collectXRefs;
-  if (endLine!=-1)
-    g_inputLines  = endLine+1;
-  else
-    g_inputLines  = countLines();
-  
   if (startLine!=-1)
     g_yyLineNr    = startLine;
   else
     g_yyLineNr    = 1;
+  if (endLine!=-1)
+    g_inputLines  = endLine+1;
+  else
+    g_inputLines  = g_yyLineNr + countLines() - 1;
+  
   
   g_exampleBlock  = exBlock; 
   g_exampleName   = exName;
   g_sourceFileDef = fd;
 
   bool cleanupSourceDef = FALSE;
-  if (fd==0)
+  if (exBlock && fd==0)
   {
     // create a dummy filedef for the example
     g_sourceFileDef = new FileDef("",(exName?exName:"generated"));
@@ -1557,6 +1579,7 @@ void parsePythonCode(CodeOutputInterface &od,const char * /*className*/,
     setCurrentDoc("l00001");
   }
 
+  g_includeCodeFragment = inlineFragment;
   // Starts line 1 on the output  
   startCodeLine();
 

@@ -191,7 +191,7 @@ void ManGenerator::endTitleHead(const char *,const char *name)
   t << ".ad l" << endl;
   t << ".nh" << endl;
   t << ".SH NAME" << endl;
-  t << name << " \\- ";
+  t << name;
   firstCol=FALSE;
   paragraph=TRUE;
   inHeader=TRUE;
@@ -208,7 +208,7 @@ void ManGenerator::newParagraph()
   paragraph=TRUE;
 }
 
-void ManGenerator::startParagraph()
+void ManGenerator::startParagraph(const char *)
 {
   if (!paragraph)
   {
@@ -418,7 +418,7 @@ void ManGenerator::endCodeFragment()
   col=0;
 }
 
-void ManGenerator::startMemberDoc(const char *,const char *,const char *,const char *,bool) 
+void ManGenerator::startMemberDoc(const char *,const char *,const char *,const char *,int,int,bool) 
 { 
   if (!firstCol) t << endl;
   t << ".SS \""; 
@@ -762,19 +762,26 @@ void ManGenerator::endInlineHeader()
   firstCol = FALSE;
 }
 
-void ManGenerator::startMemberDocSimple()
+void ManGenerator::startMemberDocSimple(bool isEnum)
 {
   if (!firstCol) 
   {
     t << endl << ".PP" << endl;
   }
   t << "\\fB";
-  docify(theTranslator->trCompoundMembers());
+  if (isEnum)
+  {
+    docify(theTranslator->trEnumerationValues());
+  }
+  else
+  {
+    docify(theTranslator->trCompoundMembers());
+  }
   t << ":\\fP" << endl;
   t << ".RS 4" << endl;
 }
 
-void ManGenerator::endMemberDocSimple()
+void ManGenerator::endMemberDocSimple(bool)
 {
   if (!firstCol) t << endl;
   t << ".RE" << endl;

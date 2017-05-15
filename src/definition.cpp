@@ -933,7 +933,7 @@ void Definition::writeSourceDef(OutputList &ol,const char *)
       QCString lineStr;
       lineStr.sprintf("%d",m_impl->body->startLine);
       QCString anchorStr = getSourceAnchor();
-      ol.startParagraph();
+      ol.startParagraph("definition");
       if (lineMarkerPos<fileMarkerPos) // line marker before file marker
       {
         // write text left from linePos marker
@@ -1067,7 +1067,7 @@ void Definition::writeSourceDef(OutputList &ol,const char *)
     }
     else
     {
-      err("translation error: invalid markers in trDefinedInSourceFile()\n");
+      err("translation error: invalid markers in trDefinedAtLineInSourceFile()\n");
     }
   }
   ol.popGeneratorState();
@@ -1109,7 +1109,7 @@ void Definition::writeInlineCode(OutputList &ol,const char *scopeName)
           actualStart,actualEnd,codeFragment)
        )
     {
-      //printf("Adding code fragement '%s' ext='%s'\n",
+      //printf("Adding code fragment '%s' ext='%s'\n",
       //    codeFragment.data(),m_impl->defFileExt.data());
       ParserInterface *pIntf = Doxygen::parserManager->getParser(m_impl->defFileExt);
       pIntf->resetCodeParserState();
@@ -1152,7 +1152,7 @@ void Definition::_writeSourceRefList(OutputList &ol,const char *scopeName,
   {
     members->sort();
 
-    ol.startParagraph();
+    ol.startParagraph("reference");
     ol.parseText(text);
     ol.docify(" ");
 
@@ -1874,6 +1874,21 @@ FileDef *Definition::getBodyDef() const
 GroupList *Definition::partOfGroups() const 
 { 
   return m_impl->partOfGroups; 
+}
+
+bool Definition::isLinkableViaGroup() const
+{
+  GroupList *gl = partOfGroups();
+  if (gl)
+  {
+    GroupListIterator gli(*gl);
+    GroupDef *gd;
+    for (gli.toFirst();(gd=gli.current());++gli)
+    {
+      if (gd->isLinkable()) return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 Definition *Definition::getOuterScope() const 

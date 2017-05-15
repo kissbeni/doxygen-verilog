@@ -15,6 +15,8 @@
  *
  */
 %option never-interactive
+%option prefix="commentcnvYY"
+
 %{
 
   
@@ -465,7 +467,7 @@ void replaceComment(int offset);
                                      }
                                      BEGIN(VerbatimCode);
   				   }
-<CComment,ReadLine>[\\@]("f$"|"f["|"f{"[a-z]*) {
+<CComment,ReadLine>[\\@]("f$"|"f["|"f{") {
                                      copyToOutput(yytext,(int)yyleng); 
 				     g_blockName=&yytext[1];
 				     if (g_blockName.at(1)=='[')
@@ -488,9 +490,9 @@ void replaceComment(int offset);
 <Scan>.                            { /* any ather character */
                                      copyToOutput(yytext,(int)yyleng); 
                                    }
-<Verbatim>[\\@]("endverbatim"|"endlatexonly"|"endhtmlonly"|"endxmlonly"|"docbookonly"|"endrtfonly"|"endmanonly"|"f$"|"f]"|"f}") { /* end of verbatim block */
+<Verbatim>[\\@]("endverbatim"|"endlatexonly"|"endhtmlonly"|"endxmlonly"|"enddocbookonly"|"endrtfonly"|"endmanonly"|"f$"|"f]"|"f}") { /* end of verbatim block */
                                      copyToOutput(yytext,(int)yyleng);
-				     if (yytext[1]=='f') // end of formula
+				     if (&yytext[1]==g_blockName) // end of formula
 				     {
 				       BEGIN(g_lastCommentContext);
 				     }

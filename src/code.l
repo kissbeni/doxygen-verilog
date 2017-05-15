@@ -15,6 +15,8 @@
  *
  */
 %option never-interactive
+%option prefix="codeYY"
+
 %{
 
 /*
@@ -1941,7 +1943,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
   					  g_code->codify(yytext);
 					  if (*yytext=='{')
 					  {
-					    g_curlyCount++;
   					    if (g_searchingForBody)
 					    {
 					      g_searchingForBody=FALSE;
@@ -2064,11 +2065,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 <SkipCPP>"//"				{ 
   					  g_code->codify(yytext);
 					}
-<Body,FuncCall>"}"			{ 
-                                          g_theVarContext.popScope();
-					  g_yyColNr++;
-					  g_code->codify(yytext);
-					}
 <Body,FuncCall>"{"			{ 
                                           g_theVarContext.pushScope();
 
@@ -2081,7 +2077,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					    g_insideBody=TRUE;
 					  }
   					  g_code->codify(yytext);
-  					  g_curlyCount++;
 					  if (g_insideBody) 
 					  {
 					    g_bodyCurlyCount++;
@@ -2090,7 +2085,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  g_name.resize(0);
 					  BEGIN( Body );
 					}
-<Body,MemberCall,MemberCall2>"}"	{ 
+<Body,FuncCall,MemberCall,MemberCall2>"}"  { 
                                           g_theVarContext.popScope();
   					  g_type.resize(0); 
 					  g_name.resize(0);
@@ -2263,7 +2258,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 <Bases,ClassName,ClassVar,CppCliTypeModifierFollowup>{B}*"{"{B}* {
                                           g_theVarContext.pushScope();
   					  g_code->codify(yytext);
-					  g_curlyCount++;
 					  if (YY_START==ClassVar && g_curClassName.isEmpty())
 					  {
 					    g_curClassName = g_name.copy();
@@ -2564,7 +2558,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  generateClassOrGlobalLink(*g_code,yytext);
   					  g_name+=yytext; 
 					}
-<Body>{SCOPENAME}/{BN}*[;,)\]]		{ // "int var;" or "var, var2" or "debug(f) macro" 
+<Body>{SCOPENAME}/{BN}*[:;,)\]]		{ // "int var;" or "var, var2" or "debug(f) macro" , or int var : 5;
 					  addType();
 					  // changed this to generateFunctionLink, see bug 624514
 					  //generateClassOrGlobalLink(*g_code,yytext,FALSE,TRUE);
@@ -3038,12 +3032,18 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
                                           if (yytext[0]==')') // no a pointer cast
                                           {
                                             //printf("addVariable(%s,%s)\n",g_parmType.data(),g_parmName.data());
+                                            if (g_parmType.isEmpty())
+                                            {
+                                              g_parmType=g_parmName;
+                                              g_parmName.resize(0);
+                                            }
 					    g_theVarContext.addVariable(g_parmType,g_parmName);
                                           }
                                           else
                                           {
-                                            g_parmType.resize(0);
+                                            g_parmType = g_parmName;
                                             g_parmName.resize(0);
+					    g_theVarContext.addVariable(g_parmType,g_parmName);
                                           }
 					  g_theCallContext.popScope();
 					  g_inForEachExpression = FALSE;
@@ -3148,7 +3148,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					    g_insideBody=TRUE;
 					  }
 					  if (g_insideBody) g_bodyCurlyCount++;
-					  g_curlyCount++;
   					  g_type.resize(0); g_name.resize(0);
 					  BEGIN( Body );
   					}
@@ -3203,7 +3202,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
   					}
 <SkipInits>"{"				{ 
   					  g_code->codify(yytext);
-					  g_curlyCount++; 
   					  if (g_searchingForBody)
 					  {
 					    g_searchingForBody=FALSE;
@@ -3659,15 +3657,16 @@ void parseCCode(CodeOutputInterface &od,const char *className,const QCString &s,
   g_searchCtx = searchCtx;
   g_collectXRefs = collectXRefs;
   g_inFunctionTryBlock = FALSE;
-  if (endLine!=-1)
-    g_inputLines  = endLine+1;
-  else
-    g_inputLines  = countLines();
 
   if (startLine!=-1)
     g_yyLineNr    = startLine;
   else
     g_yyLineNr    = 1;
+
+  if (endLine!=-1)
+    g_inputLines  = endLine+1;
+  else
+    g_inputLines  = g_yyLineNr + countLines() - 1;
 
   g_curlyCount    = 0;
   g_bodyCurlyCount    = 0;

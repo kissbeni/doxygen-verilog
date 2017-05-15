@@ -18,6 +18,9 @@
  * supports VHDL-87/93/2008
  ******************************************************************************/
 %option never-interactive
+%option case-insensitive
+%option prefix="vhdlcodeYY"
+
 %{
 
 /*
@@ -85,6 +88,7 @@ static int           g_yyLineNr;        //!< current line number
 static bool          g_needsTermination;
 static Definition   *g_searchCtx;
 
+static bool          g_exampleBlock;
 static QCString      g_exampleName;
 static QCString      g_exampleFile;
 
@@ -181,7 +185,6 @@ static void startCodeLine()
   //if (g_currentFontClass) { g_code->endFontClass(); }
   if (g_sourceFileDef)
   {
-    g_startCode=TRUE;
     //QCString lineNumber,lineAnchor;
     //lineNumber.sprintf("%05d",g_yyLineNr);
     //lineAnchor.sprintf("l%05d",g_yyLineNr);
@@ -229,13 +232,13 @@ static void startCodeLine()
     }
   }
   g_code->startCodeLine(g_sourceFileDef); 
+  g_startCode=TRUE;
   if (g_currentFontClass)
   {
     g_code->startFontClass(g_currentFontClass);
   }
 }
 
-static void endFontClass();
 static void endCodeLine()
 {
   endFontClass();
@@ -1504,7 +1507,7 @@ void resetVhdlCodeParserState()
 }
 
 void parseVhdlCode(CodeOutputInterface &od,const char *className,const QCString &s, 
-                  bool /*exBlock*/, const char *exName,FileDef *fd,
+                  bool exBlock, const char *exName,FileDef *fd,
                   int startLine,int endLine,bool inlineFragment,
                   MemberDef *memberDef,bool,Definition *searchCtx,
                   bool /* collectXRefs */)
@@ -1527,23 +1530,24 @@ void parseVhdlCode(CodeOutputInterface &od,const char *className,const QCString 
   g_needsTermination = FALSE;
   g_searchCtx = searchCtx;
 
-  if (endLine!=-1)
-    g_inputLines  = endLine+1;
-  else
-    g_inputLines  = countLines();
-
   if (startLine!=-1)
     g_yyLineNr    = startLine;
   else
     g_yyLineNr    = 1;
 
+  if (endLine!=-1)
+    g_inputLines  = endLine+1;
+  else
+    g_inputLines  = g_yyLineNr + countLines() - 1;
+
 
   // g_theCallContext.clear();
   g_classScope    = className;
+  g_exampleBlock  = exBlock; 
   g_exampleName   = exName;
   g_sourceFileDef = fd;
   bool cleanupSourceDef = FALSE;
-  if (fd==0)
+  if (exBlock && fd==0)
   {
     // create a dummy filedef for the example
     g_sourceFileDef = new FileDef("",exName);

@@ -34,30 +34,6 @@
 #include "htmlentity.h"
 #include "plantuml.h"
 
-static QCString escapeLabelName(const char *s)
-{
-  QCString result;
-  const char *p=s;
-  char c;
-  if (p)
-  {
-    while ((c=*p++))
-    {
-      switch (c)
-      {
-        case '%': result+="\\%"; break;
-        case '|': result+="\\texttt{\"|}"; break;
-        case '!': result+="\"!"; break;
-        case '{': result+="\\lcurly{}"; break;
-        case '}': result+="\\rcurly{}"; break;
-        case '~': result+="````~"; break; // to get it a bit better in index together with other special characters
-        default: result+=c;
-      }
-    }
-  }
-  return result;
-}
-
 const int maxLevels=5;
 static const char *secLabels[maxLevels] = 
    { "section","subsection","subsubsection","paragraph","subparagraph" };
@@ -410,8 +386,8 @@ void LatexDocVisitor::visit(DocAnchor *anc)
   m_t << "\\label{" << stripPath(anc->file()) << "_" << anc->anchor() << "}%" << endl;
   if (!anc->file().isEmpty() && Config_getBool(PDF_HYPERLINKS)) 
   {
-    m_t << "\\hypertarget{" << stripPath(anc->file()) << "_" << anc->anchor() 
-      << "}{}%" << endl;
+    m_t << "\\Hypertarget{" << stripPath(anc->file()) << "_" << anc->anchor() 
+      << "}%" << endl;
   }    
 }
 
@@ -431,7 +407,14 @@ void LatexDocVisitor::visit(DocInclude *inc)
                                            inc->text(),
                                            langExt,
                                            inc->isExample(),
-                                           inc->exampleFile(), &fd);
+                                           inc->exampleFile(),
+                                           &fd,   // fileDef,
+                                           -1,    // start line
+                                           -1,    // end line
+                                           FALSE, // inline fragment
+                                           0,     // memberDef
+                                           TRUE   // show line numbers
+					  );
          m_t << "\\end{DoxyCodeInclude}" << endl;
       }
       break;    
@@ -440,7 +423,14 @@ void LatexDocVisitor::visit(DocInclude *inc)
       Doxygen::parserManager->getParser(inc->extension())
                             ->parseCode(m_ci,inc->context(),
                                         inc->text(),langExt,inc->isExample(),
-                                        inc->exampleFile());
+                                        inc->exampleFile(),
+                                        0,     // fileDef
+                                        -1,    // startLine
+                                        -1,    // endLine
+                                        TRUE,  // inlineFragment
+                                        0,     // memberDef
+                                        FALSE
+			  		);
       m_t << "\\end{DoxyCodeInclude}\n";
       break;
     case DocInclude::DontInclude: 
@@ -468,6 +458,33 @@ void LatexDocVisitor::visit(DocInclude *inc)
                                           );
          m_t << "\\end{DoxyCodeInclude}" << endl;
       }
+      break;
+    case DocInclude::SnipWithLines:
+      {
+         QFileInfo cfi( inc->file() );
+         FileDef fd( cfi.dirPath().utf8(), cfi.fileName().utf8() );
+         m_t << "\n\\begin{DoxyCodeInclude}\n";
+         Doxygen::parserManager->getParser(inc->extension())
+                               ->parseCode(m_ci,
+                                           inc->context(),
+                                           extractBlock(inc->text(),inc->blockId()),
+                                           langExt,
+                                           inc->isExample(),
+                                           inc->exampleFile(), 
+                                           &fd,
+                                           lineBlock(inc->text(),inc->blockId()),
+                                           -1,    // endLine
+                                           FALSE, // inlineFragment
+                                           0,     // memberDef
+                                           TRUE   // show line number
+                                          );
+         m_t << "\\end{DoxyCodeInclude}" << endl;
+      }
+      break;
+    case DocInclude::SnippetDoc: 
+    case DocInclude::IncludeDoc: 
+      err("Internal inconsistency: found switch SnippetDoc / IncludeDoc in file: %s"
+          "Please create a bug report\n",__FILE__);
       break;
   }
 }
@@ -515,8 +532,10 @@ void LatexDocVisitor::visit(DocFormula *f)
 void LatexDocVisitor::visit(DocIndexEntry *i)
 {
   if (m_hide) return;
-  m_t << "\\index{" << escapeLabelName(i->entry()) << "@{";
-  escapeMakeIndexChars(i->entry());
+  m_t << "\\index{";
+  m_t << latexEscapeLabelName(i->entry(),false);
+  m_t << "@{";
+  m_t << latexEscapeIndexChars(i->entry(),false);
   m_t << "}}";
 }
 
@@ -1150,7 +1169,7 @@ void LatexDocVisitor::visitPre(DocHtmlCell *c)
   }
   if (c->isHeading())
   {
-    m_t << "{\\bf ";
+    m_t << "\\textbf{ ";
   }
   if (cs>1)
   {
@@ -1547,7 +1566,7 @@ void LatexDocVisitor::visitPre(DocXRefItem *x)
   }
   else
   {
-    m_t << "{\\bf ";
+    m_t << "\\textbf{ ";
   }
   m_insideItem=TRUE;
   filter(x->title());
@@ -1655,7 +1674,7 @@ void LatexDocVisitor::startLink(const QCString &ref,const QCString &file,const Q
   }
   else // external link
   {
-    m_t << "{\\bf ";
+    m_t << "\\textbf{ ";
   }
 }
 

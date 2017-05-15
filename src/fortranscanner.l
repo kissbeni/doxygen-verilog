@@ -38,6 +38,9 @@
  * - Must track yyLineNr when using REJECT, unput() or similar commands.
  */
 %option never-interactive
+%option case-insensitive
+%option prefix="fortranscannerYY"
+
 %{
 
 #include <stdio.h> 
@@ -322,6 +325,12 @@ SCOPENAME ({ID}{BS}"::"{BS})*
 
  /*-----------------------------------------------------------------------------------*/
 
+<Prepass>^{BS}[&]*{BS}!.*\n             { /* skip lines with just comment. Note code was in free format or has been converted to it */
+                                          lineCountPrepass ++;
+                                        }
+<Prepass>^{BS}\n                        { /* skip empty lines */
+                                          lineCountPrepass ++;
+                                        }
 <*>^.*\n                                { // prepass: look for line continuations
   					  functionLine = FALSE;
 
@@ -1422,6 +1431,7 @@ static const char* prepassFixedForm(const char* contents)
   bool inSingle=FALSE;
   bool inDouble=FALSE;
   bool inBackslash=FALSE;
+  bool fullCommentLine=TRUE;
   int newContentsSize = strlen(contents)+3; // \000, \n (when necessary) and one spare character (to avoid reallocation)
   char* newContents = (char*)malloc(newContentsSize);
 
@@ -1435,8 +1445,17 @@ static const char* prepassFixedForm(const char* contents)
     char c = contents[i];
     switch(c) {
       case '\n':
-        prevLineLength=column;
-        prevLineAmpOrExclIndex=getAmpOrExclAtTheEnd(&contents[i-prevLineLength+1], prevLineLength,prevQuote);
+        if (!fullCommentLine)
+        {
+          prevLineLength=column;
+          prevLineAmpOrExclIndex=getAmpOrExclAtTheEnd(&contents[i-prevLineLength+1], prevLineLength,prevQuote);
+          if (prevLineAmpOrExclIndex == -1) prevLineAmpOrExclIndex = column - 1;
+        }
+        else
+        {
+          prevLineLength+=column;
+        }
+        fullCommentLine=TRUE;
         column=0;
 	emptyLabel=TRUE;
         commented=FALSE;
@@ -1463,7 +1482,8 @@ static const char* prepassFixedForm(const char* contents)
       case '\\':
         if ((column <= fixedCommentAfter) && (column!=6) && !commented)
 	{
-          // we have some special cases in respect to strings and exscaped string characters
+          // we have some special cases in respect to strings and escaped string characters
+          fullCommentLine=FALSE;
 	  newContents[j]=c;
           if (c == '\\')
           {
@@ -1512,6 +1532,7 @@ static const char* prepassFixedForm(const char* contents)
           }
 	  else
           {
+            if (!commented) fullCommentLine=FALSE;
 	    newContents[j]=c;
           }
 	  break;
@@ -1519,6 +1540,7 @@ static const char* prepassFixedForm(const char* contents)
         // fallthrough
       default:
         if(column==6 && emptyLabel) { // continuation
+          if (!commented) fullCommentLine=FALSE;
           if (c != '0') { // 0 not allowed as continuation character, see f95 standard paragraph 3.3.2.3
             newContents[j]=' ';
 
@@ -1532,6 +1554,7 @@ static const char* prepassFixedForm(const char* contents)
 	  } else {
 	    newContents[j]=c; // , just handle like space
           }
+          prevLineLength=0;
 	} else if ((column > fixedCommentAfter) && !commented) {
           // first non commented non blank character after position fixedCommentAfter
           if (c != '!') {
@@ -1542,6 +1565,7 @@ static const char* prepassFixedForm(const char* contents)
 	  newContents[j]=c;
           commented = TRUE;
 	} else {
+          if (!commented) fullCommentLine=FALSE;
 	  newContents[j]=c;
 	  emptyLabel=FALSE;
 	}
@@ -2491,7 +2515,11 @@ static void parseMain(const char *fileName,const char *fileBuf,Entry *rt, Fortra
       //printf("---strlen=%d\n", strlen(fileBuf));
       //clock_t start=clock();
 
+      //printf("Input fixed form string:\n%s\n", fileBuf);
+      //printf("===========================\n");
       inputString = prepassFixedForm(fileBuf);
+      //printf("Resulting free form string:\n%s\n", inputString);
+      //printf("===========================\n");
 
       //clock_t end=clock();
       //printf("CPU time used=%f\n", ((double) (end-start))/CLOCKS_PER_SEC);

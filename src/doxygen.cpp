@@ -73,6 +73,7 @@
 #include "pyscanner.h"
 #include "fortranscanner.h"
 #include "xmlscanner.h"
+#include "sqlscanner.h"
 #include "tclscanner.h"
 #include "code.h"
 #include "objcache.h"
@@ -2054,10 +2055,16 @@ static void findUsingDeclarations(EntryNav *rootNav)
       // file scope).
 
       QCString name = substitute(root->name,".","::"); //Java/C# scope->internal
-      usingCd = getResolvedClass(nd,fd,name);
+      usingCd = getClass(name); // try direct lookup first, this is needed to get
+                                // builtin STL classes to properly resolve, e.g.
+                                // vector -> std::vector
       if (usingCd==0)
       {
-        usingCd = Doxygen::hiddenClasses->find(name);
+        usingCd = getResolvedClass(nd,fd,name); // try via resolving (see also bug757509)
+      }
+      if (usingCd==0)
+      {
+        usingCd = Doxygen::hiddenClasses->find(name); // check if it is already hidden
       }
 
       //printf("%s -> %p\n",root->name.data(),usingCd);
@@ -2588,7 +2595,7 @@ static MemberDef *addVariableToFile(
   }
 
   Debug::print(Debug::Variables,0,
-    "    new variable, nd=%s!\n",nd?qPrint(nd->name()):"<global>");
+    "    new variable, nd=%s tagInfo=%p!\n",nd?qPrint(nd->name()):"<global>",rootNav->tagInfo());
   // new global variable, enum value or typedef
   MemberDef *md=new MemberDef(
       fileName,root->startLine,root->startColumn,
@@ -2865,11 +2872,6 @@ static void addVariable(EntryNav *rootNav,int isFuncPtr=-1)
           root->args.prepend(") ");
           //printf("root->type=%s root->args=%s\n",root->type.data(),root->args.data());
         }
-      }
-      else if (root->type.find("typedef ")!=-1 && root->type.right(2)=="()") // typedef void (func)(int)
-      {
-        root->type=root->type.left(root->type.length()-1);
-        root->args.prepend(") ");
       }
     }
 
@@ -9260,7 +9262,7 @@ static void copyStyleSheet()
   }
 }
 
-static void copyLogo()
+static void copyLogo(const QCString &outputOption)
 {
   QCString &projectLogo = Config_getString(PROJECT_LOGO);
   if (!projectLogo.isEmpty())
@@ -9273,7 +9275,7 @@ static void copyLogo()
     }
     else
     {
-      QCString destFileName = Config_getString(HTML_OUTPUT)+"/"+fi.fileName().data();
+      QCString destFileName = outputOption+"/"+fi.fileName().data();
       copyFile(projectLogo,destFileName);
       Doxygen::indexList->addImageFile(fi.fileName().data());
     }
@@ -10016,6 +10018,8 @@ void initDoxygen()
   setlocale(LC_CTYPE,"C"); // to get isspace(0xA0)==0, needed for UTF-8
   setlocale(LC_NUMERIC,"C");
 
+  portable_correct_path();
+
   Doxygen::runningTime.start();
   initPreprocessor();
 
@@ -10028,6 +10032,7 @@ void initDoxygen()
   Doxygen::parserManager->registerParser("fortranfixed", new FortranLanguageScannerFixed);
   Doxygen::parserManager->registerParser("vhdl",         new VHDLLanguageScanner);
   Doxygen::parserManager->registerParser("xml",          new XMLScanner);
+  Doxygen::parserManager->registerParser("sql",          new SQLScanner);
   Doxygen::parserManager->registerParser("tcl",          new TclLanguageScanner);
   Doxygen::parserManager->registerParser("md",           new MarkdownFileParser);
   Doxygen::parserManager->registerParser("v",            new VerilogScanner);
@@ -10097,7 +10102,6 @@ void initDoxygen()
   g_compoundKeywordDict.insert("union",(void *)8);
   g_compoundKeywordDict.insert("interface",(void *)8);
   g_compoundKeywordDict.insert("exception",(void *)8);
-
 }
 
 void cleanUpDoxygen()
@@ -10289,21 +10293,17 @@ void readConfiguration(int argc, char **argv)
         }
         else if (qstricmp(formatName,"html")==0)
         {
+          Config::init();
           if (optind+4<argc || QFileInfo("Doxyfile").exists())
+             // explicit config file mentioned or default found on disk
           {
             QCString df = optind+4<argc ? argv[optind+4] : QCString("Doxyfile");
-            if (!Config::parse(df))
+            if (!Config::parse(df)) // parse the config file
             {
               err("error opening or reading configuration file %s!\n",argv[optind+4]);
               cleanUpDoxygen();
               exit(1);
             }
-            Config::postProcess(TRUE);
-            Config::checkAndCorrect();
-          }
-          else
-          {
-            Config::init();
           }
           if (optind+3>=argc)
           {
@@ -10311,6 +10311,8 @@ void readConfiguration(int argc, char **argv)
             cleanUpDoxygen();
             exit(1);
           }
+          Config::postProcess(TRUE);
+          Config::checkAndCorrect();
 
           QCString outputLanguage=Config_getEnum(OUTPUT_LANGUAGE);
           if (!setTranslator(outputLanguage))
@@ -10338,6 +10340,7 @@ void readConfiguration(int argc, char **argv)
         }
         else if (qstricmp(formatName,"latex")==0)
         {
+          Config::init();
           if (optind+4<argc || QFileInfo("Doxyfile").exists())
           {
             QCString df = optind+4<argc ? argv[optind+4] : QCString("Doxyfile");
@@ -10347,12 +10350,6 @@ void readConfiguration(int argc, char **argv)
               cleanUpDoxygen();
               exit(1);
             }
-            Config::postProcess(TRUE);
-            Config::checkAndCorrect();
-          }
-          else // use default config
-          {
-            Config::init();
           }
           if (optind+3>=argc)
           {
@@ -10360,6 +10357,8 @@ void readConfiguration(int argc, char **argv)
             cleanUpDoxygen();
             exit(1);
           }
+          Config::postProcess(TRUE);
+          Config::checkAndCorrect();
 
           QCString outputLanguage=Config_getEnum(OUTPUT_LANGUAGE);
           if (!setTranslator(outputLanguage))
@@ -10447,6 +10446,13 @@ void readConfiguration(int argc, char **argv)
    **************************************************************************/
 
   Config::init();
+
+  if (genConfig && g_useOutputTemplate)
+  {
+    generateTemplateFiles("templates");
+    cleanUpDoxygen();
+    exit(0);
+  }
 
   if (genConfig)
   {
@@ -11691,13 +11697,18 @@ void generateOutput()
   {
     FTVHelp::generateTreeViewImages();
     copyStyleSheet();
-    copyLogo();
+    copyLogo(Config_getString(HTML_OUTPUT));
     copyExtraFiles(Config_getList(HTML_EXTRA_FILES),"HTML_EXTRA_FILES",Config_getString(HTML_OUTPUT));
   }
   if (generateLatex)
   {
     copyLatexStyleSheet();
+    copyLogo(Config_getString(LATEX_OUTPUT));
     copyExtraFiles(Config_getList(LATEX_EXTRA_FILES),"LATEX_EXTRA_FILES",Config_getString(LATEX_OUTPUT));
+  }
+  if (generateRtf)
+  {
+    copyLogo(Config_getString(RTF_OUTPUT));
   }
 
   if (generateHtml &&

@@ -15,6 +15,9 @@
  *
  */ 
 %option never-interactive
+%option case-insensitive
+%option prefix="tclscannerYY"
+
 %{
 #include <stdio.h> 
 #include <stdlib.h>
@@ -539,7 +542,7 @@ static void tcl_name(const QCString &ns0, const QCString &name0, QCString &ns, Q
 static void tcl_name_SnippetAware(const QCString &ns0, const QCString &name0, QCString &ns, QCString &name)
 {
   // If we are inside an inlined code snippet then ns0
-  // already containes the complete namespace path.
+  // already contains the complete namespace path.
   // Any namespace qualifiers in name0 are redundant.
   int i = name0.findRev("::");
   if (i>=0 && tcl.memberdef)

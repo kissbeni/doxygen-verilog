@@ -423,7 +423,7 @@ void HtmlDocVisitor::visit(DocVerbatim *s)
           file.writeBlock( s->text(), s->text().length() );
           file.close();
 
-          m_t << "<div align=\"center\">" << endl;
+          m_t << "<div class=\"dotgraph\">" << endl;
           writeDotFile(fileName,s->relPath(),s->context());
           visitPreCaption(m_t, s);
           visitCaption(this, s->children());
@@ -460,7 +460,7 @@ void HtmlDocVisitor::visit(DocVerbatim *s)
           file.writeBlock( text, text.length() );
           file.close();
 
-          m_t << "<div align=\"center\">" << endl;
+          m_t << "<div class=\"mscgraph\">" << endl;
           writeMscFile(baseName+".msc",s->relPath(),s->context());
           visitPreCaption(m_t, s);
           visitCaption(this, s->children());
@@ -478,7 +478,7 @@ void HtmlDocVisitor::visit(DocVerbatim *s)
 
         static QCString htmlOutput = Config_getString(HTML_OUTPUT);
         QCString baseName = writePlantUMLSource(htmlOutput,s->exampleFile(),s->text());
-        m_t << "<div align=\"center\">" << endl;
+        m_t << "<div class=\"plantumlgraph\">" << endl;
         writePlantUMLFile(baseName,s->relPath(),s->context());
         visitPreCaption(m_t, s);
         visitCaption(this, s->children());
@@ -578,12 +578,42 @@ void HtmlDocVisitor::visit(DocInclude *inc)
                                            -1,    // endLine
                                            TRUE,  // inlineFragment
                                            0,     // memberDef
+                                           FALSE, // show line number
+                                           m_ctx  // search context
+                                          );
+         m_t << PREFRAG_END;
+         forceStartParagraph(inc);
+      }
+      break;
+    case DocInclude::SnipWithLines:
+      {
+         forceEndParagraph(inc);
+         m_t << PREFRAG_START;
+         QFileInfo cfi( inc->file() );
+         FileDef fd( cfi.dirPath().utf8(), cfi.fileName().utf8() );
+         Doxygen::parserManager->getParser(inc->extension())
+                               ->parseCode(m_ci,
+                                           inc->context(),
+                                           extractBlock(inc->text(),inc->blockId()),
+                                           langExt,
+                                           inc->isExample(),
+                                           inc->exampleFile(), 
+                                           &fd,
+                                           lineBlock(inc->text(),inc->blockId()),
+                                           -1,    // endLine
+                                           FALSE, // inlineFragment
+                                           0,     // memberDef
                                            TRUE,  // show line number
                                            m_ctx  // search context
                                           );
          m_t << PREFRAG_END;
          forceStartParagraph(inc);
       }
+      break;
+    case DocInclude::SnippetDoc: 
+    case DocInclude::IncludeDoc: 
+      err("Internal inconsistency: found switch SnippetDoc / IncludeDoc in file: %s"
+          "Please create a bug report\n",__FILE__);
       break;
   }
 }

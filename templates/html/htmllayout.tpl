@@ -266,6 +266,14 @@
   {% endfor %}
 {% endif %}
 
+{# write html help index #}
+{% if config.GENERATE_HTMLHELP %}
+  {% encoding config.CHM_INDEX_ENCODING|default:'CP1250' %}
+    {% create 'index.hhp' from 'htmlhelpindexhhp.tpl' %}
+    {% create 'index.hhc' from 'htmlhelpindexhhc.tpl' %}
+  {% endencoding %}
+{% endif %}
+
 {# write the navigation tree data #}
 {% if config.GENERATE_TREEVIEW %}
   {% create 'navtreedata.js' from 'htmljsnavtree.tpl' %}
