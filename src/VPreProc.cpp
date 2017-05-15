@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //*************************************************************************
 //
-// Copyright 2000-2015 by Wilson Snyder.  This program is free software;
+// Copyright 2000-2017 by Wilson Snyder.  This program is free software;
 // you can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
 //
@@ -610,6 +610,7 @@ bool VPreProcImp::readWholefile(const string& filename, StrList& outl) {
     }
     while (!eof) {
 	ussize_t todo = INFILTER_IPC_BUFSIZ;
+	errno = 0;
 	ussize_t got = read (fd, buf, todo);
 	if (got>0) {
 	    outl.push_back(string(buf, got));
