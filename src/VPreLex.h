@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //*************************************************************************
 //
-// Copyright 2000-2017 by Wilson Snyder.  This program is free software;
+// Copyright 2000-2018 by Wilson Snyder.  This program is free software;
 // you can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
 //
@@ -66,6 +66,8 @@ struct VPreProcImp;
 #define VP_BACKQUOTE	311
 #define VP_SYMBOL_JOIN	312
 #define VP_DEFREF_JOIN	313
+#define VP_JOIN		314
+
 
 #define VP_PSL		350
 

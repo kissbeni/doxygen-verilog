@@ -14,7 +14,7 @@
  *
  ******************************************************************************
  *
- * Copyright 2000-2017 by Wilson Snyder.  This program is free software;
+ * Copyright 2000-2018 by Wilson Snyder.  This program is free software;
  * you can redistribute it and/or modify it under the terms of either the GNU
  * Lesser General Public License Version 3 or the Perl Artistic License Version 2.0.
  *
@@ -157,6 +157,7 @@ prag_trans_on	({ws}*{pragma_tools}{ws}+{translate_on}{ws}*)
 <STRIFY>{symbdef}``	{ yyleng-=2; return (VP_SYMBOL_JOIN); }
 <STRIFY>"`"{symbdef}	{ return (VP_DEFREF); }
 <STRIFY>"`"{symbdef}``	{ yyleng-=2; return (VP_DEFREF_JOIN); }
+<STRIFY>``              { yyleng-=2; return (VP_JOIN); }
 <STRIFY>{crnl}		{ linenoInc(); yytext=(char*)"\n"; yyleng=1; return(VP_WHITE); }
 <STRIFY>{wsn}+		{ return (VP_WHITE); }
 <STRIFY>{drop}		{ }
@@ -164,11 +165,13 @@ prag_trans_on	({ws}*{pragma_tools}{ws}+{translate_on}{ws}*)
 <STRIFY>.		{ return (VP_TEXT); }
 
 	/* Protected blocks */
-<INITIAL>"`protected"	{ yy_push_state(PRTMODE); yymore(); }
+<INITIAL>"`protected"						{ yy_push_state(PRTMODE); yymore(); }
+<INITIAL>"`pragma"{wsn}+"protect"{wsn}+"begin_protected"	{ yy_push_state(PRTMODE); yymore(); }
 <PRTMODE><<EOF>>	{ linenoInc(); yyerrorf("EOF in `protected"); yyleng=0; yyterminate(); }
 <PRTMODE>{crnl}		{ linenoInc(); return VP_TEXT; }
 <PRTMODE>.	 	{ yymore(); }
-<PRTMODE>"`endprotected" { yy_pop_state(); return VP_TEXT; }
+<PRTMODE>"`endprotected" 				{ yy_pop_state(); return VP_TEXT; }
+<PRTMODE>"`pragma"{wsn}+"protect"{wsn}+"end_protected"	{ yy_pop_state(); return VP_TEXT; }
 
 	/* Pass-through include <> filenames */
 <INCMODE><<EOF>>	{ linenoInc(); yyerrorf("EOF in unterminated include filename"); yyleng=0; yyterminate(); }
@@ -260,6 +263,7 @@ prag_trans_on	({ws}*{pragma_tools}{ws}+{translate_on}{ws}*)
 			}}
 <ARGMODE>"`"{symbdef}	{ appendDefValue(yytext,yyleng); }  /* defref in defref - outer macro expands first */
 <ARGMODE>"`"{symbdef}`` { appendDefValue(yytext,yyleng); }  /* defref in defref - outer macro expands first */
+<ARGMODE>``             { appendDefValue(yytext,yyleng); }  /* defref in defref - outer macro expands first */
 <ARGMODE>[^\/\*\n\r\\(,){}\[\]\"`]+	|
 <ARGMODE>.		{ appendDefValue(yytext,yyleng); }
 
@@ -304,6 +308,7 @@ prag_trans_on	({ws}*{pragma_tools}{ws}+{translate_on}{ws}*)
                                       return (VP_DEFREF); 
                                     }
 <INITIAL>"`"{symbdef}``	{ yyleng-=2; return (VP_DEFREF_JOIN); }
+<INITIAL>``             { yyleng-=2; return (VP_JOIN); }
 
 	/* Generics */
 <INITIAL><<EOF>> 	{ yyterminate(); }  /* A "normal" EOF */
@@ -316,6 +321,7 @@ prag_trans_on	({ws}*{pragma_tools}{ws}+{translate_on}{ws}*)
                                 return (VP_SYMBOL); 
                                 }
 <INITIAL>{symb}``	{ yyleng-=2; return (VP_SYMBOL_JOIN); }
+<INITIAL>``		{ yyleng-=2; return (VP_JOIN); }
 <INITIAL>[\r]		{ }
 <INITIAL>{wsn}+		{ if (!keepWhitespace()) { yytext=(char*)" "; yyleng=1; } return VP_WHITE; }
 <INITIAL>{drop}		{ }
