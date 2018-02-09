@@ -31,26 +31,28 @@
 #include <unistd.h>
 #include <qfile.h>
 #include <qdict.h>
-
 #include "entry.h"
+#include "verilogdocgen.h"
 #include "qcstring.h"
 #include "qlist.h"
 #include "qstringlist.h"
-
 #include "filedef.h"
 #include "classlist.h"
 #include "classdef.h"
-
 #include "translator.h"
-
 #include "qregexp.h"
 #include "outputlist.h"
 #include "membername.h"
 #include "memberdef.h"
 #include "memberlist.h"
-#include "verilogdocgen.h"
+
 
 #define  VBUF_SIZE 1024
+
+/** \brief Verilog parser using state-based lexical scanning.
+ *
+ * This is the Verilog language parser for doxygen.
+ */
 
 class VerilogScanner : public ParserInterface
 {
@@ -79,7 +81,7 @@ class VerilogScanner : public ParserInterface
                    Definition *searchCtx=0,
                    bool collectXRefs=TRUE
                   );
-    void resetCodeParserState(){};
+    void resetCodeParserState();
     void parsePrototype(const char *text);
 };
 
@@ -90,7 +92,6 @@ bool generateVerilogMemLink(QCString &clName,QCString& memberName,int type);
 bool generateVerilogClassOrGlobalLink(const char *clName);
 void writeVerilogFont(const char *s,const char* text);
 
-//void generateVerilogMemLink(QCString &clName,QCString& memberName);
 bool generateVerilogCompMemLink(QCString &cl,QCString& inst,QCString & key, bool b);
 
 bool writeVerilogColoredWord(const QCString& word );

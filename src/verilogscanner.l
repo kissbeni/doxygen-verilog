@@ -235,54 +235,56 @@ static const char* VerilogKewWordMap1[] = {"$async$and$array","$async$and$plane"
   }
 }
 
-static void startCodeBlock(int index){
-    int ll=strComment.length();
-     iCodeLen=inputVerilogString.findRev(strComment.data())+ll;
+void startCodeBlock(int index)
+{
+  int ll=strComment.length();
+  //if (!gBlock) gBlock = new Entry;
+  iCodeLen=inputVerilogString.findRev(strComment.data())+ll;
   //fprintf(stderr,"\n startin code..%d %d %d\n",iCodeLen,num_chars,ll);
-   //assert(false);
-    gBlock.reset();
-   int len=strComment.length();
-   QCString name=strComment.right(len-index);// 
-    name=VhdlDocGen::getIndexWord(name.data(),1);
-    if(!name)
-      gBlock.name="misc"+ VhdlDocGen::getRecordNumber(); 
-    else
-      gBlock.name=name;
-   strComment=strComment.left(index);
-    gBlock.startLine=yyLineNr+1;
-    gBlock.bodyLine=yyLineNr+1;
-    VhdlDocGen::prepareComment(strComment);
-   gBlock.brief+=strComment;
+  gBlock.reset();
+  int len=strComment.length();
+  QCString name=strComment.right(len-index);// 
+  name=VhdlDocGen::getIndexWord(name.data(),1);
+  if(!name)
+    gBlock.name="misc"+ VhdlDocGen::getRecordNumber(); 
+  else
+    gBlock.name=name;
+  strComment=strComment.left(index);
+  gBlock.startLine=yyLineNr+1;
+  gBlock.bodyLine=yyLineNr+1;
+  VhdlDocGen::prepareComment(strComment);
+  gBlock.brief+=strComment;
 }
+
 static void makeInlineDoc(int endCode)
 {
-     int len=endCode-iCodeLen;
-     QCString par=inputVerilogString.mid(iCodeLen,len);
-     gBlock.doc=par;
-     gBlock.inbodyDocs=par;
-     gBlock.section=Entry::VARIABLE_SEC;
-     gBlock.spec=VhdlDocGen::MISCELLANEOUS;
-     gBlock.fileName = yyFileName;
-     gBlock.endBodyLine=yyLineNr-1;
-     gBlock.lang=SrcLangExt_VHDL;
-     gBlock.fileName =yyFileName;
-     gBlock.lang=SrcLangExt_VHDL;
-     Entry *temp=new Entry(gBlock);
-     Entry* compound= getCurrVerilog();
-//     fprintf(stderr,"\n <<<%s %s \n %s \n %d %d %d\n\n>>>\n",compound->name.data(),gBlock.brief.data(),par.data(),endCode,iCodeLen,yyLineNr);
+  int len=endCode-iCodeLen;
+  QCString par=inputVerilogString.mid(iCodeLen,len);
+  //fprintf(stderr,"\n inline code: \n<%s>",par.data());
+  gBlock.doc=par;
+  gBlock.inbodyDocs=par;
+  gBlock.section=Entry::VARIABLE_SEC;
+  gBlock.spec=VhdlDocGen::MISCELLANEOUS;
+  gBlock.fileName = yyFileName;
+  gBlock.endBodyLine=yyLineNr-1;
+  gBlock.lang=SrcLangExt_VHDL;
+  gBlock.fileName =yyFileName;
+  gBlock.lang=SrcLangExt_VHDL;
+  Entry *temp=new Entry(gBlock);
+  Entry* compound= getCurrVerilog();
 
-    if(compound)
+  if(compound)
+  {
     compound->addSubEntry(temp);
+  }
   else
   {
-     temp->type="misc"; // global code like library ieee...
-     curRoots->addSubEntry(temp);
+    temp->type="misc"; // global code like library ieee...
+    curRoots->addSubEntry(temp);
   }
-
- gBlock.reset();
- strComment.resize(0); 
- resetVerilogBrief();
-
+  strComment.resize(0); 
+  gBlock.reset();
+  resetVerilogBrief();
 }// makeInlineDoc
 
 static bool isConstraintFile(QCString fileName,const char *type)
@@ -951,13 +953,6 @@ static void setCurrentDoc(QCString &anchor)
 static void startCodeLine()
 {
   //if (g_currentFontClass) { g_code->endFontClass(); }
-
-bool isLine;
-if(ss1>ee1)
-  isLine=true;
-  else
-isLine=false; 
-  
   if (g_sourceFileDef)
   {
    //  if((yyLineNr % 500) == 0) 
@@ -974,7 +969,9 @@ isLine=false;
 	    QCString nn=g_currentMemberDef->name();
 		MemberDef* mdeff=VhdlDocGen::findMember(g_tempComp,nn);
 		if(mdeff)
-          g_currentMemberDef=mdeff;
+    {
+      g_currentMemberDef=mdeff;
+    }
 	  
 	  }
        
