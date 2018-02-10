@@ -574,7 +574,7 @@ void MemberList::writeDeclarations(OutputList &ol,
   }
   else if (num>0)
   {
-    if (title && !Config_getBool(OPTIMIZE_OUTPUT_VERILOG)) 
+    if (title && !Config_getBool(OPTIMIZE_OUTPUT_VERILOG))
     {
       if (showInline)
       {

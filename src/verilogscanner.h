@@ -81,7 +81,7 @@ class VerilogScanner : public ParserInterface
                    Definition *searchCtx=0,
                    bool collectXRefs=TRUE
                   );
-    void resetCodeParserState();
+    void resetCodeParserState(){};
     void parsePrototype(const char *text);
 };
 

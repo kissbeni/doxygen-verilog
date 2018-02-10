@@ -116,17 +116,17 @@ void TooltipManager::writeTooltips(CodeOutputInterface &ol)
     {
       MemberDef *md = (MemberDef*)d;
       QCString s;
-      ClassDef *cl=md->getClassDef();
+      ClassDef *cl = md->getClassDef();
       if(cl)
-        s=cl->name();
-      QCString s1=VerilogDocGen::convertTypeToString(md->getMemberSpecifiers());
-      decl=s1+" ";
-      QCString d=md->declaration();
+        s = cl->name();
+      QCString s1 = VerilogDocGen::convertTypeToString(md->getMemberSpecifiers());
+      decl = s1 + " ";
+      QCString d = md->declaration();
       VerilogDocGen::adjustOpName(d);
       VerilogDocGen::adjustMemberName(md);
       decl += d;
       if(cl)
-        docInfo.name=s+"::"+md->name();
+        docInfo.name = s + "::" + md->name();
       if (!decl.isEmpty() && decl.at(0)=='@') // hide enum values
       {
         decl.resize(0);

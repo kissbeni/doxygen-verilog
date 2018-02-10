@@ -235,7 +235,7 @@ static const char* VerilogKewWordMap1[] = {"$async$and$array","$async$and$plane"
   }
 }
 
-void startCodeBlock(int index)
+static void startCodeBlock(int index)
 {
   int ll=strComment.length();
   //if (!gBlock) gBlock = new Entry;

@@ -967,11 +967,10 @@ QCString VhdlDocGen::getClassTitle(const ClassDef *cd)
   
   static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
   if(optVerilog)
-   return VerilogDocGen::getClassTitle(cd);
+    return VerilogDocGen::getClassTitle(cd);
 
   QCString pageTitle;
   if (cd==0) return "";
-  pageTitle+=cd->displayName();
   pageTitle=VhdlDocGen::getClassName(cd);
   int ii=cd->protection();
   pageTitle+=" ";
@@ -1145,7 +1144,7 @@ void VhdlDocGen::writeVhdlLink(const ClassDef* ccd ,OutputList& ol,QCString& typ
  */
 void VhdlDocGen::prepareComment(QCString& qcs)
 {
-  static bool optVerilog       = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
+  static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
   const char* s="--!";
   int index=0;
 
@@ -1241,10 +1240,10 @@ QCString VhdlDocGen::getIndexWord(const char* c,int index)
 
 QCString VhdlDocGen::getProtectionName(int prot)
 {
-  static bool optVerilog    = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
+  static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
   if(optVerilog)
   {
-    if(prot==Public) 
+    if(prot==Public)
       return "Module";
     else
       return "Primitive";
@@ -1263,7 +1262,7 @@ QCString VhdlDocGen::getProtectionName(int prot)
 
 QCString VhdlDocGen::trTypeString(uint64 type)
 {
-  static bool optVerilog       = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
+  static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
 
   if(optVerilog)
     return VerilogDocGen::convertTypeToString(type);
@@ -1350,7 +1349,7 @@ QCString VhdlDocGen::getRecordNumber()
 
 QCString VhdlDocGen::getProcessNumber()
 {
-  static bool optVerilog=Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
+  static bool optVerilog = Config_getBool(OPTIMIZE_OUTPUT_VERILOG);
   static int stringCounter;
   char buf[8];
   QCString qcs("PROCESS_");
@@ -1377,7 +1376,7 @@ bool checkString(QCString &name,OutputList& ol)
   int len=name.length();
   if (name.at(0)=='"' && name.at(len-1)=='"' && len > 2)
   {
-    startFonts(name,"keyword",ol);     
+    startFonts(name,"keyword",ol);
     return true;
   }
   return false;
@@ -1498,7 +1497,6 @@ bool VhdlDocGen::isNumber(const QCString& s)
   }
   else 
     j = regg.match(s.data(),0,&len);
-
   if ((j==0) && (len==(int)s.length())) return TRUE;
   return FALSE;
 
@@ -2296,7 +2294,6 @@ void VhdlDocGen::writeVHDLDeclaration(MemberDef* mdef,OutputList &ol,
       {
         if (VhdlDocGen::isConfig(mdef) || VhdlDocGen::isCompInst(mdef))
         {
-          nn=mdef->getOutputFileBase();
           nn=ltype;
         }
         else

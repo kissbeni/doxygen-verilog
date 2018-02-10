@@ -650,9 +650,9 @@ void MemberDefImpl::init(Definition *def,
   args=removeRedundantWhiteSpace(args);
   if(Config_getBool(OPTIMIZE_OUTPUT_VERILOG))
   {
-    QCString nn=def->name();
+    QCString nn = def->name();
     VerilogDocGen::adjustOpName(nn);
-    if (type.isEmpty()) decl=nn+" "+args; else decl=args+" "+nn+" "+type; 
+    if (type.isEmpty()) decl=nn+" "+args; else decl=args+" "+nn+" "+type;
   }
   else
   {
