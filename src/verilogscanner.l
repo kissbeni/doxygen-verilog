@@ -647,7 +647,7 @@ void writePrevVerilogWords(const QCString& qcs){
 //	printf("\n++++++++++++++++++ %s",qcs.data()); 
 //if(qcs.contains("`"))
 //	 printVerilogStringList();
-	 if(strcmp(qcs.data(),word->data()) != 0)
+	 if(qcs != *word)
 	  {
       writeVWord(*word);
      qlist.removeFirst();
@@ -1942,7 +1942,7 @@ for(uint j=0;j<qsl.count();j++)
                          if (isExampleBlock && fileDef==0)
                         {
                           // create a dummy filedef for the example
-                         g_sourceFileDef = new FileDef("",exampleName);
+                         g_sourceFileDef = createFileDef("",exampleName);
                         }
                        g_searchCtx = searchCtx;
                        if (g_sourceFileDef) 

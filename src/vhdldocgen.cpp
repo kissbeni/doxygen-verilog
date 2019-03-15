@@ -2565,7 +2565,7 @@ bool VhdlDocGen::writeClassType( ClassDef *& cd,
   else
   {
     int id=cd->protection();
-    qcs = VhdlDocGen::trTypeString(id+2,TRUE);
+    qcs = VhdlDocGen::trTypeString(id+2);
   }
   cname=VhdlDocGen::getClassName(cd);
   ol.startBold();

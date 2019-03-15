@@ -187,6 +187,16 @@ class VhdlDocGen
     static bool isNumber(const QCString& s);
     static QCString getProtectionName(int prot);
 
+    static QCString trTypeString(uint64 type);
+    static QCString trVhdlType(uint64 type,bool sing);
+    static QCString trDesignUnitHierarchy();
+    static QCString trDesignUnitList();
+    static QCString trDesignUnitMembers();
+    static QCString trDesignUnitListDescription();
+    static QCString trDesignUnitIndex();
+    static QCString trDesignUnits();
+    static QCString trFunctionAndProc();
+
     static void parseUCF(const char*  input,Entry* entity,QCString f,bool vendor);
     static bool findConstraintFile( LayoutNavEntry *lne);
 
