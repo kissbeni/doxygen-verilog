@@ -35,6 +35,7 @@
 #include "docparser.h"
 #include "htmldocvisitor.h"
 #include "filedef.h"
+#include "classdef.h"
 #include "util.h"
 #include "resourcemgr.h"
 
@@ -171,11 +172,10 @@ void FTVHelp::decContentsDepth()
 
 /*! Add a list item to the contents file.
  *  \param isDir TRUE if the item is a directory, FALSE if it is a text
- *  \param name The name of the item.
+ *  \param name the name of the item.
  *  \param ref  the URL of to the item.
  *  \param file the file containing the definition of the item
  *  \param anchor the anchor within the file.
- *  \param name the name of the item.
  *  \param separateIndex put the entries in a separate index file
  *  \param addToNavIndex add this entry to the quick navigation index
  *  \param def Definition corresponding to this entry
@@ -223,7 +223,7 @@ static QCString node2URL(FTVNode *n,bool overruleFile=FALSE,bool srcLink=FALSE)
   {
     if (overruleFile && n->def && n->def->definitionType()==Definition::TypeFile)
     {
-      FileDef *fd = (FileDef*)n->def;
+      FileDef *fd = dynamic_cast<FileDef*>(n->def);
       if (srcLink)
       {
         url = fd->getSourceFileBase();
@@ -257,7 +257,7 @@ void FTVHelp::generateIndent(FTextStream &t, FTVNode *n,bool opened)
   while (p) { indent++; p=p->parent; }
   if (n->isDir)
   {
-    QCString dir = opened ? "&#9660;" : "&#9654;";
+    QCString dir = opened ? "&#9660;" : "&#9658;";
     t << "<span style=\"width:" << (indent*16) << "px;display:inline-block;\">&#160;</span>"
       << "<span id=\"arr_" << generateIndentLabel(n,0) << "\" class=\"arrow\" ";
     t << "onclick=\"toggleFolder('" << generateIndentLabel(n,0) << "')\"";
@@ -286,7 +286,7 @@ void FTVHelp::generateLink(FTextStream &t,FTVNode *n)
       t << "<a class=\"elRef\" ";
       QCString result = externalLinkTarget();
       if (result != "") setTarget = TRUE;
-      t << result << externalRef("",n->ref,FALSE);
+      t << result;
     }
     else // local link
     {
@@ -301,6 +301,10 @@ void FTVHelp::generateLink(FTextStream &t,FTVNode *n)
         t << "\" target=\"basefrm\">";
       else
         t << "\" target=\"_self\">";
+    }
+    else
+    {
+      t << "\">";
     }
     t << convertToHtml(n->name);
     t << "</a>";
@@ -326,6 +330,27 @@ static void generateBriefDoc(FTextStream &t,Definition *def)
     delete visitor;
     delete root;
   }
+}
+
+static char compoundIcon(ClassDef *cd)
+{
+  char icon='C';
+  if (cd->getLanguage() == SrcLangExt_Slice)
+  {
+    if (cd->compoundType()==ClassDef::Interface)
+    {
+      icon='I';
+    }
+    else if (cd->compoundType()==ClassDef::Struct)
+    {
+      icon='S';
+    }
+    else if (cd->compoundType()==ClassDef::Exception)
+    {
+      icon='E';
+    }
+  }
+  return icon;
 }
 
 void FTVHelp::generateTree(FTextStream &t, const QList<FTVNode> &nl,int level,int maxLevel,int &index)
@@ -356,11 +381,19 @@ void FTVHelp::generateTree(FTextStream &t, const QList<FTVNode> &nl,int level,in
       }
       else if (n->def && n->def->definitionType()==Definition::TypeNamespace)
       {
-        t << "<span class=\"icona\"><span class=\"icon\">N</span></span>";
+        if (n->def->getLanguage() == SrcLangExt_Slice)
+        {
+          t << "<span class=\"icona\"><span class=\"icon\">M</span></span>";
+        }
+        else
+        {
+          t << "<span class=\"icona\"><span class=\"icon\">N</span></span>";
+        }
       }
       else if (n->def && n->def->definitionType()==Definition::TypeClass)
       {
-        t << "<span class=\"icona\"><span class=\"icon\">C</span></span>";
+        char icon=compoundIcon(dynamic_cast<ClassDef*>(n->def));
+        t << "<span class=\"icona\"><span class=\"icon\">" << icon << "</span></span>";
       }
       else
       {
@@ -384,9 +417,9 @@ void FTVHelp::generateTree(FTextStream &t, const QList<FTVNode> &nl,int level,in
     {
       FileDef *srcRef=0;
       if (n->def && n->def->definitionType()==Definition::TypeFile &&
-          ((FileDef*)n->def)->generateSourceFile())
+          (dynamic_cast<FileDef*>(n->def))->generateSourceFile())
       {
-        srcRef = (FileDef*)n->def;
+        srcRef = dynamic_cast<FileDef*>(n->def);
       }
       if (srcRef)
       {
@@ -404,11 +437,19 @@ void FTVHelp::generateTree(FTextStream &t, const QList<FTVNode> &nl,int level,in
       }
       else if (n->def && n->def->definitionType()==Definition::TypeNamespace)
       {
-        t << "<span class=\"icona\"><span class=\"icon\">N</span></span>";
+        if (n->def->getLanguage() == SrcLangExt_Slice)
+        {
+          t << "<span class=\"icona\"><span class=\"icon\">M</span></span>";
+        }
+        else
+        {
+          t << "<span class=\"icona\"><span class=\"icon\">N</span></span>";
+        }
       }
       else if (n->def && n->def->definitionType()==Definition::TypeClass)
       {
-        t << "<span class=\"icona\"><span class=\"icon\">C</span></span>";
+        char icon=compoundIcon(dynamic_cast<ClassDef*>(n->def));
+        t << "<span class=\"icona\"><span class=\"icon\">" << icon << "</span></span>";
       }
       else
       {
@@ -519,7 +560,7 @@ static bool generateJSTree(NavIndexEntryList &navIndex,FTextStream &t,
     {
       if (n->def && n->def->definitionType()==Definition::TypeFile)
       {
-        FileDef *fd = (FileDef*)n->def;
+        FileDef *fd = dynamic_cast<FileDef*>(n->def);
         bool doc,src;
         doc = fileVisibleInIndex(fd,src);
         if (doc)
@@ -594,29 +635,14 @@ static void generateJSNavTree(const QList<FTVNode> &nodeList)
     //tidx << "var NAVTREEINDEX =" << endl;
     //tidx << "{" << endl;
     FTextStream t(&f);
-		t << "/*\n@ @licstart  The following is the entire license notice for the\n"
-			"JavaScript code in this file.\n\nCopyright (C) 1997-2017 by Dimitri van Heesch\n\n"
-			"This program is free software; you can redistribute it and/or modify\n"
-			"it under the terms of the GNU General Public License as published by\n"
-			"the Free Software Foundation; either version 2 of the License, or\n"
-			"(at your option) any later version.\n\n"
-			"This program is distributed in the hope that it will be useful,\n"
-			"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-			" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-			" GNU General Public License for more details.\n\n"
-			"You should have received a copy of the GNU General Public License along\n"
-			"with this program; if not, write to the Free Software Foundation, Inc.,\n"
-			"51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.\n\n"
-			"@licend  The above is the entire license notice\n"
-			"for the JavaScript code in this file\n"
-			"*/\n";
+    t << JAVASCRIPT_LICENSE_TEXT;
     t << "var NAVTREE =" << endl;
     t << "[" << endl;
     t << "  [ ";
     QCString &projName = Config_getString(PROJECT_NAME);
     if (projName.isEmpty())
     {
-      if (Doxygen::mainPage && !Doxygen::mainPage->title().isEmpty()) // Use title of main page as root
+      if (mainPageHasTitle()) // Use title of main page as root
       {
         t << "\"" << convertToJSString(Doxygen::mainPage->title()) << "\", ";
       }
@@ -787,10 +813,13 @@ void FTVHelp::generateTreeViewInline(FTextStream &t)
   }
   //printf("preferred depth=%d\n",preferredDepth);
 
-  t << "<table class=\"directory\">\n";
-  int index=0;
-  generateTree(t,m_indentNodes[0],0,preferredDepth,index);
-  t << "</table>\n";
+  if (m_indentNodes[0].count())
+  {
+    t << "<table class=\"directory\">\n";
+    int index=0;
+    generateTree(t,m_indentNodes[0],0,preferredDepth,index);
+    t << "</table>\n";
+  }
 
   t << "</div><!-- directory -->\n";
 }

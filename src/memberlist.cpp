@@ -25,7 +25,6 @@
 #include "doxygen.h"
 #include "outputlist.h"
 #include "groupdef.h"
-#include "marshal.h"
 #include "vhdldocgen.h"
 #include "namespacedef.h"
 #include "filedef.h"
@@ -41,6 +40,8 @@ MemberList::MemberList() : m_listType(MemberListType_pubMethods)
   m_enumCnt=0;
   m_enumValCnt=0;
   m_typeCnt=0;
+  m_seqCnt=0;
+  m_dictCnt=0;
   m_protoCnt=0;
   m_defCnt=0;
   m_friendCnt=0;
@@ -59,6 +60,8 @@ MemberList::MemberList(MemberListType lt) : m_listType(lt)
   m_enumCnt=0;
   m_enumValCnt=0;
   m_typeCnt=0;
+  m_seqCnt=0;
+  m_dictCnt=0;
   m_protoCnt=0;
   m_defCnt=0;
   m_friendCnt=0;
@@ -86,6 +89,7 @@ int MemberList::compareValues(const MemberDef *c1, const MemberDef *c2) const
       return 1;
   }
   int cmp = qstricmp(c1->name(),c2->name());
+  if (cmp==0) cmp = qstricmp(c1->argsString(),c2->argsString());
   return cmp!=0 ? cmp : c1->getDefLine()-c2->getDefLine();
 }
 
@@ -139,7 +143,7 @@ void MemberList::countDecMembers(bool countEnumValues,GroupDef *gd)
   
   //printf("----- countDecMembers count=%d ----\n",count());
   m_varCnt=m_funcCnt=m_enumCnt=m_enumValCnt=0;
-  m_typeCnt=m_protoCnt=m_defCnt=m_friendCnt=0;
+  m_typeCnt=m_seqCnt=m_dictCnt=m_protoCnt=m_defCnt=m_friendCnt=0;
   m_numDecMembers=0;
   QListIterator<MemberDef> mli(*this);
   MemberDef *md;
@@ -168,6 +172,8 @@ void MemberList::countDecMembers(bool countEnumValues,GroupDef *gd)
                                        m_enumValCnt++,m_numDecMembers++; 
                                      break;
         case MemberType_Typedef:     m_typeCnt++,m_numDecMembers++; break;
+        case MemberType_Sequence:    m_seqCnt++,m_numDecMembers++; break;
+        case MemberType_Dictionary:  m_dictCnt++,m_numDecMembers++; break;
         //case MemberType_Prototype:   m_protoCnt++,m_numDecMembers++; break;
         case MemberType_Define:      if (Config_getBool(EXTRACT_ALL) || 
                                          md->argsString() || 
@@ -194,6 +200,8 @@ void MemberList::countDecMembers(bool countEnumValues,GroupDef *gd)
       m_enumCnt+=mg->enumCount();
       m_enumValCnt+=mg->enumValueCount();
       m_typeCnt+=mg->typedefCount();
+      m_seqCnt+=mg->sequenceCount();
+      m_dictCnt+=mg->dictionaryCount();
       m_protoCnt+=mg->protoCount();
       m_defCnt+=mg->defineCount();
       m_friendCnt+=mg->friendCount();
@@ -314,16 +322,18 @@ bool MemberList::declVisible() const
     {
       switch (md->memberType())
       {
-        case MemberType_Define:    // fall through
-        case MemberType_Typedef:   // fall through
-        case MemberType_Variable:  // fall through
-        case MemberType_Function:  // fall through
-        case MemberType_Signal:    // fall through
-        case MemberType_Slot:      // fall through
-        case MemberType_DCOP:      // fall through
-        case MemberType_Property:  // fall through
-        case MemberType_Interface: // fall through
-        case MemberType_Service:   // fall through
+        case MemberType_Define:     // fall through
+        case MemberType_Typedef:    // fall through
+        case MemberType_Variable:   // fall through
+        case MemberType_Function:   // fall through
+        case MemberType_Signal:     // fall through
+        case MemberType_Slot:       // fall through
+        case MemberType_DCOP:       // fall through
+        case MemberType_Property:   // fall through
+        case MemberType_Interface:  // fall through
+        case MemberType_Service:    // fall through
+        case MemberType_Sequence:   // fall through
+        case MemberType_Dictionary: // fall through
         case MemberType_Event:  
           return TRUE;
         case MemberType_Enumeration: 
@@ -383,17 +393,19 @@ void MemberList::writePlainDeclarations(OutputList &ol,
       //printf(">>> rendering\n");
       switch(md->memberType())
       {
-        case MemberType_Define:    // fall through
+        case MemberType_Define:      // fall through
         //case MemberType_Prototype: // fall through
-        case MemberType_Typedef:   // fall through
-        case MemberType_Variable:  // fall through
-        case MemberType_Function:  // fall through
-        case MemberType_Signal:    // fall through
-        case MemberType_Slot:      // fall through
-        case MemberType_DCOP:      // fall through
-        case MemberType_Property:  // fall through
-        case MemberType_Interface: // fall through
-        case MemberType_Service:   // fall through
+        case MemberType_Typedef:     // fall through
+        case MemberType_Variable:    // fall through
+        case MemberType_Function:    // fall through
+        case MemberType_Signal:      // fall through
+        case MemberType_Slot:        // fall through
+        case MemberType_DCOP:        // fall through
+        case MemberType_Property:    // fall through
+        case MemberType_Interface:   // fall through
+        case MemberType_Service:     // fall through
+        case MemberType_Sequence:    // fall through
+        case MemberType_Dictionary:  // fall through
         case MemberType_Event:  
           {
             if (first) ol.startMemberList(),first=FALSE;
@@ -418,6 +430,10 @@ void MemberList::writePlainDeclarations(OutputList &ol,
               if (!detailsLinkable)
               {
                 ol.startDoxyAnchor(md->getOutputFileBase(),0,md->anchor(),md->name(),QCString());
+              }
+              if (md->isSliceLocal())
+              {
+                ol.writeString("local ");
               }
               ol.writeString("enum ");
               ol.insertMemberAlign();
@@ -729,7 +745,7 @@ void MemberList::writeDocumentation(OutputList &ol,
   }
   if (memberGroupList)
   {
-    printf("MemberList::writeDocumentation()  --  member groups %d\n",memberGroupList->count());
+    //printf("MemberList::writeDocumentation()  --  member groups %d\n",memberGroupList->count());
     MemberGroupListIterator mgli(*memberGroupList);
     MemberGroup *mg;
     for (;(mg=mgli.current());++mgli)
@@ -751,7 +767,7 @@ void MemberList::writeSimpleDocumentation(OutputList &ol,
   ClassDef *cd = 0;
   if (container && container->definitionType()==Definition::TypeClass)
   {
-    cd = (ClassDef*)container;
+    cd = dynamic_cast<ClassDef*>(container);
   }
   ol.startMemberDocSimple(cd && cd->isJavaEnum());
   MemberListIterator mli(*this);
@@ -913,71 +929,6 @@ void MemberList::findSectionsInDocumentation()
   }
 }
 
-void MemberList::marshal(StorageIntf *s)
-{
-  marshalInt(s,(int)m_listType);
-  marshalInt(s,m_varCnt);
-  marshalInt(s,m_funcCnt);
-  marshalInt(s,m_enumCnt);
-  marshalInt(s,m_enumValCnt);
-  marshalInt(s,m_typeCnt);
-  marshalInt(s,m_protoCnt);
-  marshalInt(s,m_defCnt);
-  marshalInt(s,m_friendCnt); 
-  marshalInt(s,m_numDecMembers);
-  marshalInt(s,m_numDocMembers);
-  marshalBool(s,m_inGroup);
-  marshalBool(s,m_inFile);
-  marshalBool(s,m_needsSorting);
-  if (memberGroupList==0)
-  {
-    marshalUInt(s,NULL_LIST); // null pointer representation
-  }
-  else
-  {
-    marshalUInt(s,memberGroupList->count());
-    QListIterator<MemberGroup> mgi(*memberGroupList);
-    MemberGroup *mg=0;
-    for (mgi.toFirst();(mg=mgi.current());++mgi)
-    {
-      mg->marshal(s);
-    }
-  }
-}
-
-void MemberList::unmarshal(StorageIntf *s)
-{
-  m_listType       = (MemberListType)unmarshalInt(s);
-  m_varCnt         = unmarshalInt(s);
-  m_funcCnt        = unmarshalInt(s);
-  m_enumCnt        = unmarshalInt(s);
-  m_enumValCnt     = unmarshalInt(s);
-  m_typeCnt        = unmarshalInt(s);
-  m_protoCnt       = unmarshalInt(s);
-  m_defCnt         = unmarshalInt(s);
-  m_friendCnt      = unmarshalInt(s); 
-  m_numDecMembers  = unmarshalInt(s);
-  m_numDocMembers  = unmarshalInt(s);
-  m_inGroup        = unmarshalBool(s);
-  m_inFile         = unmarshalBool(s);
-  m_needsSorting   = unmarshalBool(s);
-  uint i,count     = unmarshalUInt(s); 
-  if (count==NULL_LIST) // empty list
-  {
-    memberGroupList = 0;
-  }
-  else // add member groups
-  {
-    memberGroupList = new MemberGroupList;
-    for (i=0;i<count;i++)
-    {
-      MemberGroup *mg = new MemberGroup;
-      mg->unmarshal(s);
-      memberGroupList->append(mg);
-    }
-  }
-}
-
 void MemberList::setNeedsSorting(bool b)
 {
   m_needsSorting = b;
@@ -1023,6 +974,8 @@ QCString MemberList::listTypeAsString(MemberListType type)
     case MemberListType_decDefineMembers: return "define-members";
     case MemberListType_decProtoMembers: return "proto-members";
     case MemberListType_decTypedefMembers: return "typedef-members";
+    case MemberListType_decSequenceMembers: return "sequence-members";
+    case MemberListType_decDictionaryMembers: return "dictionary-members";
     case MemberListType_decEnumMembers: return "enum-members";
     case MemberListType_decFuncMembers: return "func-members";
     case MemberListType_decVarMembers: return "var-members";

@@ -261,7 +261,7 @@ static void writeMapArea(FTextStream &t,ClassDef *cd,QCString relPath,
     t << "<area ";
     if (!ref.isEmpty()) 
     {
-      t << externalLinkTarget() << externalRef(relPath,ref,FALSE);
+      t << externalLinkTarget();
     }
     t << "href=\"";
     t << externalRef(relPath,ref,TRUE);
@@ -833,7 +833,7 @@ void TreeDiagram::drawConnectors(FTextStream &t,Image *image,
             }
             ++rit; di=rit.current();
           }
-          // add last horizonal line and a vertical connection line
+          // add last horizontal line and a vertical connection line
           if (bitmap)
           {
             if (doBase) // base classes
@@ -1020,7 +1020,7 @@ void clearVisitFlags()
   ClassDef *cd;
   for (;(cd=cli.current());++cli)
   {
-    cd->visited=FALSE;
+    cd->setVisited(FALSE);
   }
 }
 
@@ -1380,7 +1380,5 @@ void ClassDiagram::writeImage(FTextStream &t,const char *path,
 #define IMAGE_EXT ".png"
   image.save((QCString)path+"/"+fileName+IMAGE_EXT);
   Doxygen::indexList->addImageFile(QCString(fileName)+IMAGE_EXT);
-  
-  if (generateMap) t << "</map>" << endl;
 }
 

@@ -335,6 +335,7 @@ void DocSets::addIndexItem(Definition *context,MemberDef *md,
     case SrcLangExt_Tcl:     lang="tcl"; break;        // Tcl
     case SrcLangExt_Markdown:lang="markdown"; break;   // Markdown
     case SrcLangExt_VERILOG: lang="verilog"; break;    // VERILOG
+    case SrcLangExt_Slice:   lang="slice"; break;      // Slice
     case SrcLangExt_Unknown: lang="unknown"; break;    // should not happen!
   }
 
@@ -402,6 +403,10 @@ void DocSets::addIndexItem(Definition *context,MemberDef *md,
         type="ifc"; break;
       case MemberType_Service:
         type="svc"; break;
+      case MemberType_Sequence:
+        type="sequence"; break;
+      case MemberType_Dictionary:
+        type="dictionary"; break;
     }
     cd = md->getClassDef();
     nd = md->getNamespaceDef();
@@ -428,15 +433,15 @@ void DocSets::addIndexItem(Definition *context,MemberDef *md,
   {
     if (fd==0 && context->definitionType()==Definition::TypeFile)
     {
-      fd = (FileDef*)context;
+      fd = dynamic_cast<FileDef*>(context);
     }
     if (cd==0 && context->definitionType()==Definition::TypeClass)
     {
-      cd = (ClassDef*)context;
+      cd = dynamic_cast<ClassDef*>(context);
     }
     if (nd==0 && context->definitionType()==Definition::TypeNamespace)
     {
-      nd = (NamespaceDef*)context;
+      nd = dynamic_cast<NamespaceDef*>(context);
     }
     if (fd)
     {

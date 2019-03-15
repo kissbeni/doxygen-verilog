@@ -29,7 +29,7 @@
       <xsd:element name="innergroup" type="refType" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element name="templateparamlist" type="templateparamlistType" minOccurs="0" />
       <xsd:element name="sectiondef" type="sectiondefType" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:element name="tableofcontents" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="tableofcontents" type="tableofcontentsType" minOccurs="0" maxOccurs="1" />
       <xsd:element name="briefdescription" type="descriptionType" minOccurs="0" />
       <xsd:element name="detaileddescription" type="descriptionType" minOccurs="0" />
       <xsd:element name="inheritancegraph" type="graphType" minOccurs="0" />
@@ -155,6 +155,8 @@
     <xsd:attribute name="virt" type="DoxVirtualKind" use="optional"/>
     <xsd:attribute name="volatile" type="DoxBool" use="optional"/>
     <xsd:attribute name="mutable" type="DoxBool" use="optional"/>
+    <xsd:attribute name="noexcept" type="DoxBool" use="optional"/>
+    <xsd:attribute name="constexpr" type="DoxBool" use="optional"/>
     <!-- Qt property -->
     <xsd:attribute name="readable" type="DoxBool" use="optional"/>
     <xsd:attribute name="writable" type="DoxBool" use="optional"/>
@@ -302,6 +304,9 @@
     <xsd:attribute name="file" type="xsd:string" />
     <xsd:attribute name="line" type="xsd:integer" />
     <xsd:attribute name="column" type="xsd:integer" use="optional"/>
+    <xsd:attribute name="declfile" type="xsd:string" use="optional"/>
+    <xsd:attribute name="declline" type="xsd:integer" use="optional"/>
+    <xsd:attribute name="declcolumn" type="xsd:integer" use="optional"/>
     <xsd:attribute name="bodyfile" type="xsd:string" />
     <xsd:attribute name="bodystart" type="xsd:integer" />
     <xsd:attribute name="bodyend" type="xsd:integer" />
@@ -384,6 +389,8 @@
     <xsd:choice>
       <xsd:element name="ulink" type="docURLLink" />
       <xsd:element name="bold" type="docMarkupType" />
+      <xsd:element name="strike" type="docMarkupType" />
+      <xsd:element name="underline" type="docMarkupType" />
       <xsd:element name="emphasis" type="docMarkupType" />
       <xsd:element name="computeroutput" type="docMarkupType" />
       <xsd:element name="subscript" type="docMarkupType" />
@@ -395,11 +402,13 @@
       <xsd:element name="xmlonly" type="xsd:string" />
       <xsd:element name="rtfonly" type="xsd:string" />
       <xsd:element name="latexonly" type="xsd:string" />
+      <xsd:element name="image" type="docImageType" />
       <xsd:element name="dot" type="xsd:string" />
       <xsd:element name="plantuml" type="xsd:string" />
       <xsd:element name="anchor" type="docAnchorType" />
       <xsd:element name="formula" type="docFormulaType" />
       <xsd:element name="ref" type="docRefTextType" />
+      <xsd:element name="emoji" type="docEmojiType" />
       <!-- Automatically insert here the HTML entities -->
     </xsd:choice>
   </xsd:group>
@@ -551,6 +560,7 @@
     <xsd:attribute name="name" type="xsd:string" /> 
     <xsd:attribute name="width" type="xsd:string" /> 
     <xsd:attribute name="height" type="xsd:string" /> 
+    <xsd:attribute name="inline" type="DoxBool" /> 
   </xsd:complexType>
 
   <xsd:complexType name="docFileType" mixed="true">
@@ -640,6 +650,25 @@
   </xsd:complexType>
 
   <xsd:complexType name="docEmptyType"/>
+
+  <xsd:complexType name="tableofcontentsType">
+    <xsd:sequence>
+      <xsd:element name="tocsect" type="tableofcontentsKindType" minOccurs="1" maxOccurs="unbounded" />
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="tableofcontentsKindType">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="reference" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="tableofcontents" type="tableofcontentsType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="docEmojiType">
+    <xsd:attribute name="name" type="xsd:string"/>
+    <xsd:attribute name="unicode" type="xsd:string"/>
+  </xsd:complexType>
 
   <!-- Simple types -->
 
