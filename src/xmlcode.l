@@ -339,8 +339,6 @@ void parseXmlCode(
 {  
   if (s.isEmpty()) return;
   
-  TooltipManager::instance()->clearTooltips();
-  
   g_code = &od;
   g_inputString   = s;
   g_inputPosition = 0;
@@ -367,7 +365,7 @@ void parseXmlCode(
   if (exBlock && fd==0)
   {
     // create a dummy filedef for the example
-    g_sourceFileDef = new FileDef("",(exName?exName:"generated"));
+    g_sourceFileDef = createFileDef("",(exName?exName:"generated"));
     cleanupSourceDef = TRUE;
   }
   
@@ -387,10 +385,6 @@ void parseXmlCode(
   if (g_needsTermination)
   {
     endCodeLine();
-  }
-  if (fd)
-  {
-    TooltipManager::instance()->writeTooltips(*g_code);
   }
   if (cleanupSourceDef)
   {

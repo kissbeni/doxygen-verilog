@@ -11,7 +11,7 @@
 # Documents produced by Doxygen are derivative works derived from the
 # input used in their production; they are not affected by this license.
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1.3)
 project(doxygen)
 
 option(build_wizard    "Build the GUI frontend for doxygen." OFF)
@@ -36,7 +36,7 @@ if (use_sqlite3)
 	set(sqlite3  "1" CACHE INTERNAL "used in settings.h")
 endif()
 
-set(MACOS_VERSION_MIN 10.5)
+set(MACOS_VERSION_MIN 10.9)
 if (use_libclang)
 	set(clang    "1" CACHE INTERNAL "used in settings.h")
         find_package(LLVM CONFIG REQUIRED)
@@ -90,7 +90,10 @@ find_package(BISON REQUIRED)
 find_package(Threads)
 
 if (sqlite3)
-    find_package(SQLite3 REQUIRED)
+  find_package(SQLite3 REQUIRED)
+  if (SQLITE3_VERSION VERSION_LESS 3.9.0)
+    message(SEND_ERROR "Doxygen requires at least sqlite3 version 3.9.0 (installed: ${SQLITE3_VERSION})")
+  endif()
 endif()
 
 find_package(Iconv REQUIRED)

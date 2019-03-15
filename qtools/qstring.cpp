@@ -10768,7 +10768,7 @@ otherwise.
 
 These functions are: isNull() (returns TRUE if the character is
 U+0000), isPrint() (TRUE if the character is any sort of printable
-character, including whitespace), isPunct() (any sort of punctation),
+character, including whitespace), isPunct() (any sort of punctuation),
 isMark() (Unicode Marks), isLetter (letters), isNumber() (any sort of
 numeric characters), isLetterOrNumber(),  and isDigit() (decimal digits).
 All of these are wrappers around category(), which returns the
@@ -12956,7 +12956,7 @@ int QString::find( QChar c, int index, bool cs ) const
 	index += length();
     if ( (uint)index >= length() )		// index outside string
 	return -1;
-    register const QChar *uc;
+    const QChar *uc;
     uc = unicode()+index;
     int n = length()-index;
     if ( cs ) {
@@ -13325,7 +13325,7 @@ QString QString::mid( uint index, uint len ) const
 	    len = slen - index;
 	if ( index == 0 && len == length() )
 	    return *this;
-	register const QChar *p = unicode()+index;
+	const QChar *p = unicode()+index;
 	QString s( len, TRUE );
 	memcpy( s.d->unicode, p, len*sizeof(QChar) );
 	s.d->len = len;
@@ -13429,7 +13429,7 @@ QString QString::lower() const
     int l=length();
     if ( l ) {
 	s.real_detach(); // could do this only when we find a change
-	register QChar *p=s.d->unicode;
+	QChar *p=s.d->unicode;
 	if ( p ) {
 	    while ( l-- ) {
 		*p = p->lower();
@@ -13458,7 +13458,7 @@ QString QString::upper() const
     int l=length();
     if ( l ) {
 	s.real_detach(); // could do this only when we find a change
-	register QChar *p=s.d->unicode;
+	QChar *p=s.d->unicode;
 	if ( p ) {
 	    while ( l-- ) {
 		*p = p->upper();
@@ -13493,7 +13493,7 @@ QString QString::stripWhiteSpace() const
     if ( !at(0).isSpace() && !at(length()-1).isSpace() )
 	return *this;
 
-    register const QChar *s = unicode();
+    const QChar *s = unicode();
     QString result = fromLatin1("");
 
     int start = 0;

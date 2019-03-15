@@ -76,6 +76,8 @@ class MemberGroup
     int enumCount() const;
     int enumValueCount() const;
     int typedefCount() const;
+    int sequenceCount() const;
+    int dictionaryCount() const;
     int protoCount() const;
     int defineCount() const;
     int friendCount() const;
@@ -91,9 +93,6 @@ class MemberGroup
 
     QCString docFile() const { return m_docFile; }
     int docLine() const { return m_docLine; }
-
-    void marshal(StorageIntf *s);
-    void unmarshal(StorageIntf *s);
 
   private: 
     MemberList *memberList;      // list of all members in the group

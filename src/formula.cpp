@@ -69,8 +69,11 @@ void FormulaList::generateBitmaps(const char *path)
     FTextStream t(&f);
     if (Config_getBool(LATEX_BATCHMODE)) t << "\\batchmode" << endl;
     t << "\\documentclass{article}" << endl;
+    t << "\\usepackage{ifthen}" << endl;
     t << "\\usepackage{epsfig}" << endl; // for those who want to include images
+    t << "\\usepackage[utf8]{inputenc}" << endl; // looks like some older distributions with newunicode package 1.1 need this option.
     writeExtraLatexPackages(t);
+    writeLatexSpecialFormulaChars(t);
     t << "\\pagestyle{empty}" << endl; 
     t << "\\begin{document}" << endl;
     int page=0;
@@ -96,8 +99,7 @@ void FormulaList::generateBitmaps(const char *path)
   {
     //printf("Running latex...\n");
     //system("latex _formulas.tex </dev/null >/dev/null");
-    QCString latexCmd = Config_getString(LATEX_CMD_NAME);
-    if (latexCmd.isEmpty()) latexCmd="latex";
+    QCString latexCmd = "latex";
     portable_sysTimerStart();
     if (portable_system(latexCmd,"_formulas.tex")!=0)
     {

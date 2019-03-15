@@ -31,6 +31,7 @@
 #include "filename.h"
 #include "config.h"
 #include "htmlentity.h"
+#include "emoji.h"
 
 static void visitCaption(XmlDocVisitor *parent, QList<DocNode> children)
 {
@@ -39,10 +40,10 @@ static void visitCaption(XmlDocVisitor *parent, QList<DocNode> children)
   for (cli.toFirst();(n=cli.current());++cli) n->accept(parent);
 }
 
-static void visitPreStart(FTextStream &t, const char *cmd, const bool doCaption, 
+static void visitPreStart(FTextStream &t, const char *cmd, bool doCaption, 
                           XmlDocVisitor *parent, QList<DocNode> children, 
                           const QCString &name, bool writeType, DocImage::Type type, const QCString &width, 
-                          const QCString &height)
+                          const QCString &height, bool inlineImage = FALSE)
 {
   t << "<" << cmd;
   if (writeType)
@@ -59,15 +60,19 @@ static void visitPreStart(FTextStream &t, const char *cmd, const bool doCaption,
   }
   if (!name.isEmpty())
   {
-    t << " name=\"" << name << "\"";
+    t << " name=\"" << convertToXML(name, TRUE) << "\"";
   }
   if (!width.isEmpty())
   {
     t << " width=\"" << convertToXML(width) << "\"";
   }
-  else if (!height.isEmpty())
+  if (!height.isEmpty())
   {
     t << " height=\"" << convertToXML(height) << "\"";
+  }
+  if (inlineImage)
+  {
+    t << " inline=\"yes\"";
   }
   if (doCaption)
   {
@@ -133,6 +138,24 @@ void XmlDocVisitor::visit(DocSymbol *s)
   }
 }
 
+void XmlDocVisitor::visit(DocEmoji *s)
+{
+  if (m_hide) return;
+  const char *res = EmojiEntityMapper::instance()->name(s->index());
+  if (res)
+  {
+    QCString name=res;
+    name = name.mid(1,name.length()-2);
+    m_t << "<emoji name=\"" << name << "\" unicode=\"";
+    filter(EmojiEntityMapper::instance()->unicode(s->index()));
+    m_t << "\"/>";
+  }
+  else
+  {
+    m_t << s->name();
+  }
+}
+
 void XmlDocVisitor::visit(DocURL *u)
 {
   if (m_hide) return;
@@ -163,6 +186,12 @@ void XmlDocVisitor::visit(DocStyleChange *s)
   {
     case DocStyleChange::Bold:
       if (s->enable()) m_t << "<bold>";      else m_t << "</bold>";
+      break;
+    case DocStyleChange::Strike:
+      if (s->enable()) m_t << "<strike>";      else m_t << "</strike>";
+      break;
+    case DocStyleChange::Underline:
+      if (s->enable()) m_t << "<underline>";      else m_t << "</underline>";
       break;
     case DocStyleChange::Italic:
       if (s->enable()) m_t << "<emphasis>";     else m_t << "</emphasis>";
@@ -270,20 +299,21 @@ void XmlDocVisitor::visit(DocInclude *inc)
       { 
          m_t << "<programlisting filename=\"" << inc->file() << "\">";
          QFileInfo cfi( inc->file() );
-         FileDef fd( cfi.dirPath().utf8(), cfi.fileName().utf8() );
+         FileDef *fd = createFileDef( cfi.dirPath().utf8(), cfi.fileName().utf8() );
          Doxygen::parserManager->getParser(inc->extension())
                                ->parseCode(m_ci,inc->context(),
                                            inc->text(),
                                            langExt,
                                            inc->isExample(),
                                            inc->exampleFile(),
-                                           &fd,   // fileDef,
+                                           fd,   // fileDef,
                                            -1,    // start line
                                            -1,    // end line
                                            FALSE, // inline fragment
                                            0,     // memberDef
                                            TRUE   // show line numbers
 					   );
+         delete fd;
          m_t << "</programlisting>"; 
       }
       break;    
@@ -305,9 +335,17 @@ void XmlDocVisitor::visit(DocInclude *inc)
       m_t << "</programlisting>"; 
       break;
     case DocInclude::DontInclude: 
+    case DocInclude::DontIncWithLines: 
       break;
     case DocInclude::HtmlInclude: 
-      m_t << "<htmlonly>";
+      if (inc->isBlock())
+      {
+        m_t << "<htmlonly block=\"yes\">";
+      }
+      else
+      {
+        m_t << "<htmlonly>";
+      }
       filter(inc->text());
       m_t << "</htmlonly>";
       break;
@@ -337,7 +375,7 @@ void XmlDocVisitor::visit(DocInclude *inc)
       {
          m_t << "<programlisting filename=\"" << inc->file() << "\">";
          QFileInfo cfi( inc->file() );
-         FileDef fd( cfi.dirPath().utf8(), cfi.fileName().utf8() );
+         FileDef *fd = createFileDef( cfi.dirPath().utf8(), cfi.fileName().utf8() );
          Doxygen::parserManager->getParser(inc->extension())
                                ->parseCode(m_ci,
                                            inc->context(),
@@ -345,13 +383,14 @@ void XmlDocVisitor::visit(DocInclude *inc)
                                            langExt,
                                            inc->isExample(),
                                            inc->exampleFile(), 
-                                           &fd,
+                                           fd,
                                            lineBlock(inc->text(),inc->blockId()),
                                            -1,    // endLine
                                            FALSE, // inlineFragment
                                            0,     // memberDef
                                            TRUE   // show line number
                                           );
+         delete fd;
          m_t << "</programlisting>"; 
       }
       break;
@@ -382,10 +421,25 @@ void XmlDocVisitor::visit(DocIncOperator *op)
     popEnabled();
     if (!m_hide) 
     {
+      FileDef *fd;
+      if (!op->includeFileName().isEmpty())
+      {
+        QFileInfo cfi( op->includeFileName() );
+        fd = createFileDef( cfi.dirPath().utf8(), cfi.fileName().utf8() );
+      }
+
       Doxygen::parserManager->getParser(m_langExt)
                             ->parseCode(m_ci,op->context(),
                                         op->text(),langExt,op->isExample(),
-                                        op->exampleFile());
+                                        op->exampleFile(),
+                                        fd,     // fileDef
+                                        op->line(),    // startLine
+                                        -1,    // endLine
+                                        FALSE, // inline fragment
+                                        0,     // memberDef
+                                        op->showLineNo()  // show line numbers
+                                       );
+      if (fd) delete fd;
     }
     pushEnabled();
     m_hide=TRUE;
@@ -488,7 +542,7 @@ void XmlDocVisitor::visitPre(DocPara *)
 void XmlDocVisitor::visitPost(DocPara *)
 {
   if (m_hide) return;
-  m_t << "</para>";
+  m_t << "</para>" << endl;
 }
 
 void XmlDocVisitor::visitPre(DocRoot *)
@@ -734,9 +788,7 @@ void XmlDocVisitor::visitPost(DocInternal *)
 void XmlDocVisitor::visitPre(DocHRef *href)
 {
   if (m_hide) return;
-  m_t << "<ulink url=\"";
-  filter(href->url());
-  m_t << "\">";
+  m_t << "<ulink url=\"" << convertToXML(href->url(), TRUE) << "\">";
 }
 
 void XmlDocVisitor::visitPost(DocHRef *) 
@@ -767,7 +819,7 @@ void XmlDocVisitor::visitPre(DocImage *img)
   {
     baseName=baseName.right(baseName.length()-i-1);
   }
-  visitPreStart(m_t, "image", FALSE, this, img->children(), baseName, TRUE, img->type(), img->width(), img->height());
+  visitPreStart(m_t, "image", FALSE, this, img->children(), baseName, TRUE, img->type(), img->width(), img->height(), img ->isInlineImage());
 
   // copy the image to the output dir
   FileDef *fd;

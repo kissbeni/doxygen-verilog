@@ -85,6 +85,7 @@ void TooltipManager::addTooltip(Definition *d)
   {
     id+="_"+anc;
   }
+  id = "a" + id;
   if (p->tooltipInfo.find(id)==0)
   {
     p->tooltipInfo.insert(id,d);
@@ -114,7 +115,7 @@ void TooltipManager::writeTooltips(CodeOutputInterface &ol)
     QCString decl;
     if (d->definitionType()==Definition::TypeMember)
     {
-      MemberDef *md = (MemberDef*)d;
+      MemberDef *md = dynamic_cast<MemberDef*>(d);
       QCString s;
       ClassDef *cl = md->getClassDef();
       if(cl)

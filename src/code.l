@@ -116,11 +116,13 @@ static int           g_memCallContext;
 static int	     g_lastCContext;
 static int           g_skipInlineInitContext;
 
+static bool          g_insideCpp;
 static bool          g_insideObjC;
 static bool          g_insideJava;
 static bool          g_insideCS;
 static bool          g_insidePHP;
 static bool          g_insideProtocolList;
+static bool          g_insideSlice;
 
 static bool          g_lexInit = FALSE;
 
@@ -839,7 +841,7 @@ static void updateCallContextForSmartPointer()
   Definition *d = g_theCallContext.getScope();
   //printf("updateCallContextForSmartPointer() cd=%s\n",cd ? d->name().data() : "<none>");
   MemberDef *md;
-  if (d && d->definitionType()==Definition::TypeClass && (md=((ClassDef*)d)->isSmartPointer()))
+  if (d && d->definitionType()==Definition::TypeClass && (md=(dynamic_cast<ClassDef*>(d))->isSmartPointer()))
   {
     ClassDef *ncd = stripClassName(md->typeString(),md->getOuterScope());
     if (ncd)
@@ -982,7 +984,7 @@ static void generateClassOrGlobalLink(CodeOutputInterface &ol,const char *clName
       }
     }
     NamespaceDef *nd = getResolvedNamespace(className);
-    if (nd)
+    if (nd && nd->isLinkableInProject())
     {
       g_theCallContext.setScope(nd);
       addToSearchIndex(className);
@@ -1174,7 +1176,7 @@ static bool generateClassMemberLink(CodeOutputInterface &ol,Definition *def,cons
 {
   if (def && def->definitionType()==Definition::TypeClass)
   {
-    ClassDef *cd = (ClassDef*)def;
+    ClassDef *cd = dynamic_cast<ClassDef*>(def);
     MemberDef *xmd = cd->getMemberByName(memName);
     //printf("generateClassMemberLink(class=%s,member=%s)=%p\n",def->name().data(),memName,xmd);
     if (xmd)
@@ -1195,7 +1197,7 @@ static bool generateClassMemberLink(CodeOutputInterface &ol,Definition *def,cons
   }
   else if (def && def->definitionType()==Definition::TypeNamespace)
   {
-    NamespaceDef *nd = (NamespaceDef*)def;
+    NamespaceDef *nd = dynamic_cast<NamespaceDef*>(def);
     //printf("Looking for %s inside namespace %s\n",memName,nd->name().data());
     Definition *innerDef = nd->findInnerCompound(memName);
     if (innerDef)
@@ -1323,7 +1325,9 @@ static void generateFunctionLink(CodeOutputInterface &ol,const char *funcName)
   //CodeClassDef *ccd=0;
   ClassDef *ccd=0;
   QCString locScope=g_classScope;
-  QCString locFunc=removeRedundantWhiteSpace(funcName);
+  QString qq=removeRedundantWhiteSpace(funcName);
+  if (g_insidePHP && qq.startsWith("self::")) qq=qq.mid(4);
+  QCString locFunc(qq.data());
   QCString funcScope;
   QCString funcWithScope=locFunc;
   QCString funcWithFullScope=locFunc;
@@ -1479,7 +1483,7 @@ static void writeObjCMethodCall(ObjCCallCtx *ctx)
 	  if (g_currentDefinition && 
 	      g_currentDefinition->definitionType()==Definition::TypeClass)
 	  {
-	    ctx->objectType = (ClassDef *)g_currentDefinition;
+	    ctx->objectType = dynamic_cast<ClassDef *>(g_currentDefinition);
 	  }
 	}
 	else
@@ -1503,7 +1507,7 @@ static void writeObjCMethodCall(ObjCCallCtx *ctx)
 	  if (g_currentDefinition && 
 	      g_currentDefinition->definitionType()==Definition::TypeClass)
 	  {
-	    ctx->objectVar = ((ClassDef *)g_currentDefinition)->getMemberByName(ctx->objectTypeOrName);
+	    ctx->objectVar = (dynamic_cast<ClassDef *>(g_currentDefinition))->getMemberByName(ctx->objectTypeOrName);
 	    //printf("      ctx->objectVar=%p\n",ctx->objectVar);
 	    if (ctx->objectVar)
 	    {
@@ -1585,7 +1589,7 @@ static void writeObjCMethodCall(ObjCCallCtx *ctx)
 	      if (g_currentDefinition && 
 		  g_currentDefinition->definitionType()==Definition::TypeClass)
 	      {
-	        ctx->objectType = (ClassDef *)g_currentDefinition;
+	        ctx->objectType = dynamic_cast<ClassDef *>(g_currentDefinition);
 	        if (ctx->objectType->categoryOf()) 
 	        {
 	          ctx->objectType = ctx->objectType->categoryOf();
@@ -1604,7 +1608,7 @@ static void writeObjCMethodCall(ObjCCallCtx *ctx)
 	      if (g_currentDefinition &&
 		  g_currentDefinition->definitionType()==Definition::TypeClass)
 	      {
-		ClassDef *cd = (ClassDef *)g_currentDefinition;
+		ClassDef *cd = dynamic_cast<ClassDef *>(g_currentDefinition);
 		if (cd->categoryOf()) 
 		{
 		  cd = cd->categoryOf();
@@ -1796,6 +1800,11 @@ static QCString escapeComment(const char *s)
   return result;
 }
 
+static bool skipLanguageSpecificKeyword(const QCString &kw)
+{
+  return g_insideCpp && (kw == "remove" || kw == "set" || kw == "get");
+}
+
 /* -----------------------------------------------------------------
  */
 #undef	YY_INPUT
@@ -1823,10 +1832,11 @@ TEMPLIST "<"[^\"\}\{\(\)\/\n\>]*">"
 SCOPETNAME (((({ID}{TEMPLIST}?){BN}*)?{SEP}{BN}*)*)((~{BN}*)?{ID})
 SCOPEPREFIX ({ID}{TEMPLIST}?{BN}*{SEP}{BN}*)+
 KEYWORD_OBJC ("@public"|"@private"|"@protected"|"@class"|"@implementation"|"@interface"|"@end"|"@selector"|"@protocol"|"@optional"|"@required"|"@throw"|"@synthesize"|"@property")
-KEYWORD ("asm"|"__assume"|"auto"|"class"|"const"|"delete"|"enum"|"explicit"|"extern"|"false"|"friend"|"gcnew"|"gcroot"|"set"|"get"|"inline"|"internal"|"mutable"|"namespace"|"new"|"nullptr"|"override"|"operator"|"pin_ptr"|"private"|"protected"|"public"|"raise"|"register"|"remove"|"self"|"sizeof"|"static"|"struct"|"__super"|"function"|"template"|"generic"|"this"|"true"|"typedef"|"typeid"|"typename"|"union"|"using"|"virtual"|"volatile"|"abstract"|"final"|"import"|"synchronized"|"transient"|"alignas"|"alignof"|{KEYWORD_OBJC})
+KEYWORD ("asm"|"__assume"|"auto"|"class"|"const"|"delete"|"enum"|"explicit"|"extern"|"false"|"friend"|"gcnew"|"gcroot"|"set"|"get"|"inline"|"internal"|"mutable"|"namespace"|"new"|"null"|"nullptr"|"override"|"operator"|"pin_ptr"|"private"|"protected"|"public"|"raise"|"register"|"remove"|"self"|"sizeof"|"static"|"struct"|"__super"|"function"|"template"|"generic"|"this"|"true"|"typedef"|"typeid"|"typename"|"union"|"using"|"virtual"|"volatile"|"abstract"|"final"|"import"|"synchronized"|"transient"|"alignas"|"alignof"|{KEYWORD_OBJC})
 FLOWKW  ("break"|"catch"|"continue"|"default"|"do"|"else"|"finally"|"return"|"switch"|"throw"|"throws"|"@catch"|"@finally")
 FLOWCONDITION  ("case"|"for"|"foreach"|"for each"|"goto"|"if"|"try"|"while"|"@try")
-TYPEKW  ("bool"|"char"|"double"|"float"|"int"|"long"|"object"|"short"|"signed"|"unsigned"|"void"|"wchar_t"|"size_t"|"boolean"|"id"|"SEL"|"string"|"nullptr")
+TYPEKW  ("bool"|"byte"|"char"|"double"|"float"|"int"|"long"|"object"|"short"|"signed"|"unsigned"|"void"|"wchar_t"|"size_t"|"boolean"|"id"|"SEL"|"string"|"nullptr")
+TYPEKWSL ("LocalObject"|"Object"|"Value")
 CASTKW ("const_cast"|"dynamic_cast"|"reinterpret_cast"|"static_cast")
 CHARLIT   (("'"\\[0-7]{1,3}"'")|("'"\\."'")|("'"[^' \\\n]{1,4}"'"))
 ARITHOP "+"|"-"|"/"|"*"|"%"|"--"|"++"
@@ -2164,8 +2174,12 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
   					  g_code->codify(yytext);
 					  endFontClass();
 					}
+<ClassName>{ID}("."{ID})*	        |
 <ClassName>{ID}("::"{ID})*	        {
-                                          g_curClassName=yytext;
+                                          if(g_insideCS)
+                                            g_curClassName=substitute(yytext,".","::");
+                                          else
+                                            g_curClassName=yytext;
 					  addType();
                                           if (g_curClassName=="alignas")
                                           {
@@ -2229,7 +2243,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  unput(*yytext);
 					  BEGIN( Body );
   					}
-<ClassVar>("extends"|"implements")	{ // Java
+<ClassVar>("extends"|"implements")	{ // Java, Slice
   					  startFontClass("keyword");
   					  codifyLines(yytext);
 					  endFontClass();
@@ -2281,7 +2295,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					    if (getResolvedClass(g_currentDefinition,g_sourceFileDef,g_curClassName)==0)
 					    {
 					      DBG_CTX((stderr,"Adding new class %s\n",g_curClassName.data()));
-					      ClassDef *ncd=new ClassDef("<code>",1,1,
+					      ClassDef *ncd=createClassDef("<code>",1,1,
 				 		  g_curClassName,ClassDef::Class,0,0,FALSE);
 					      g_codeClassSDict->append(g_curClassName,ncd);
 					      // insert base classes.
@@ -2415,6 +2429,8 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  g_prefixed_with_this_keyword = TRUE;
                                         }
 <Body>{KEYWORD}/([^a-z_A-Z0-9]) 	{
+                                          if (g_insideJava && qstrcmp("internal",yytext) ==0) REJECT;
+                                          if (skipLanguageSpecificKeyword(yytext)) REJECT;
   					  startFontClass("keyword");
   					  codifyLines(yytext);
 					  if (QCString(yytext)=="typedef")
@@ -2425,11 +2441,13 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  endFontClass();
   					}
 <Body>{KEYWORD}/{B}* 			{
+                                          if (skipLanguageSpecificKeyword(yytext)) REJECT;
   					  startFontClass("keyword");
   					  codifyLines(yytext);
 					  endFontClass();
   					}
 <Body>{KEYWORD}/{BN}*"(" 		{
+                                          if (skipLanguageSpecificKeyword(yytext)) REJECT;
   					  startFontClass("keyword");
   					  codifyLines(yytext);
 					  endFontClass();
@@ -2455,10 +2473,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  BEGIN(FuncCall);
   					}
 <Body>{FLOWCONDITION}/{BN}*"("          {
-                                          if (g_currentMemberDef && g_currentMemberDef->isFunction())
-                                          {
-                                            g_currentMemberDef->addFlowKeyWord();
-                                          }
                                           startFontClass("keywordflow");
                                           codifyLines(yytext);
                                           endFontClass();
@@ -2476,10 +2490,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  }
   					}
 <Body>{FLOWCONDITION}/([^a-z_A-Z0-9]) 	{
-                                          if (g_currentMemberDef && g_currentMemberDef->isFunction())
-                                          {
-                                            g_currentMemberDef->addFlowKeyWord();
-                                          }
                                           startFontClass("keywordflow");
                                           codifyLines(yytext);
                                           endFontClass();
@@ -2494,10 +2504,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  endFontClass();
   					}
 <Body>{FLOWCONDITION}/{B}*              {
-                                          if (g_currentMemberDef && g_currentMemberDef->isFunction())
-                                          {
-                                            g_currentMemberDef->addFlowKeyWord();
-                                          }
                                           startFontClass("keywordflow");
                                           codifyLines(yytext);
                                           endFontClass();
@@ -2525,6 +2531,20 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  endFontClass();
 					  addType();
   					  g_name+=yytext; 
+  					}
+<Body,TemplDecl,ObjCMethod>{TYPEKWSL}/{B}* {
+                                          if (!g_insideSlice)
+                                          {
+                                            REJECT;
+                                          }
+                                          else
+                                          {
+  					    startFontClass("keywordtype");
+					    g_code->codify(yytext);
+					    endFontClass();
+					    addType();
+  					    g_name+=yytext; 
+                                          }
   					}
 <Body>"generic"/{B}*"<"[^\n\/\-\.\{\"\>]*">"{B}* {
   					  startFontClass("keyword");
@@ -2586,7 +2606,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  generatePHPVariableLink(*g_code,yytext);
   					  g_name+=yytext+7; 
                                         }
-<Body,TemplCast>{SCOPENAME}{B}*"<"[^\n\/\-\.\{\"\>]*">"("::"{ID})*/{B}* { // A<T> *pt;
+<Body,TemplCast>{SCOPENAME}{B}*"<"[^\n\/\-\.\{\"\>\(]*">"("::"{ID})*/{B}* { // A<T> *pt;
 					  int i=QCString(yytext).find('<');
 					  QCString kw = QCString(yytext).left(i).stripWhiteSpace();
 					  if (kw.right(5)=="_cast" && YY_START==Body)
@@ -2617,6 +2637,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  addType();
   					  g_name=varname; 
 					}
+<Body>{SCOPETNAME}{B}*"<"[^\n\/\-\.\{\"\>]*">"/{BN}*"(" |
 <Body>{SCOPETNAME}/{BN}*"("		{ // a() or c::a() or t<A,B>::a() or A\B\foo()
   					  addType();
 					  generateFunctionLink(*g_code,yytext);
@@ -2984,6 +3005,7 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 <MemberCall2,FuncCall>{KEYWORD}/([^a-z_A-Z0-9]) {
 					  //addParmType();
 					  //g_parmName=yytext; 
+                                          if (skipLanguageSpecificKeyword(yytext)) REJECT;
   					  startFontClass("keyword");
   					  g_code->codify(yytext);
 					  endFontClass();
@@ -2995,6 +3017,20 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
   					  g_code->codify(yytext);
 					  endFontClass();
 					}
+<MemberCall2,FuncCall,OldStyleArgs,TemplCast>{TYPEKWSL}/([^a-z_A-Z0-9]) {
+                                          if (!g_insideSlice)
+                                          {
+                                            REJECT;
+                                          }
+                                          else
+                                          {
+					    addParmType();
+					    g_parmName=yytext; 
+  					    startFontClass("keywordtype");
+  					    g_code->codify(yytext);
+					    endFontClass();
+                                          }
+					}
 <MemberCall2,FuncCall>{FLOWKW}/([^a-z_A-Z0-9]) {
 					  addParmType();
 					  g_parmName=yytext; 
@@ -3003,10 +3039,6 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					  endFontClass();
 					}
 <MemberCall2,FuncCall>{FLOWCONDITION}/([^a-z_A-Z0-9]) {
-                                          if (g_currentMemberDef && g_currentMemberDef->isFunction())
-                                          {
-                                            g_currentMemberDef->addFlowKeyWord();
-                                          }
                                           addParmType();
                                           g_parmName=yytext;
                                           startFontClass("keywordflow");
@@ -3567,6 +3599,9 @@ RAWEND    ")"[^ \t\(\)\\]{0,16}\"
 					    endFontClass();
 					  }
 					}
+<SkipComment>[^\*\n]+                   {
+                                          g_code->codify(yytext);
+                                        }
 <*>"/*"					{ 
 					  startFontClass("comment");
   					  g_code->codify(yytext);
@@ -3694,7 +3729,6 @@ void parseCCode(CodeOutputInterface &od,const char *className,const QCString &s,
 
   printlex(yy_flex_debug, TRUE, __FILE__, fd ? fd->fileName().data(): NULL);
 
-  TooltipManager::instance()->clearTooltips();
   if (g_codeClassSDict==0)
   {
     resetCCodeParserState();
@@ -3735,13 +3769,15 @@ void parseCCode(CodeOutputInterface &od,const char *className,const QCString &s,
   if (fd==0)
   {
     // create a dummy filedef for the example
-    g_sourceFileDef = new FileDef("",(exName?exName:"generated"));
+    g_sourceFileDef = createFileDef("",(exName?exName:"generated"));
     cleanupSourceDef = TRUE;
   }
-  g_insideObjC = lang==SrcLangExt_ObjC;
-  g_insideJava = lang==SrcLangExt_Java;
-  g_insideCS   = lang==SrcLangExt_CSharp;
-  g_insidePHP  = lang==SrcLangExt_PHP;
+  g_insideObjC  = lang==SrcLangExt_ObjC;
+  g_insideJava  = lang==SrcLangExt_Java;
+  g_insideCS    = lang==SrcLangExt_CSharp;
+  g_insidePHP   = lang==SrcLangExt_PHP;
+  g_insideCpp   = lang==SrcLangExt_Cpp;
+  g_insideSlice = lang==SrcLangExt_Slice;
   if (g_sourceFileDef) 
   {
     setCurrentDoc("l00001");
@@ -3774,10 +3810,6 @@ void parseCCode(CodeOutputInterface &od,const char *className,const QCString &s,
     endFontClass();
     DBG_CTX((stderr,"endCodeLine(%d)\n",g_yyLineNr));
     g_code->endCodeLine();
-  }
-  if (fd)
-  {
-    TooltipManager::instance()->writeTooltips(*g_code);
   }
   if (cleanupSourceDef)
   {
