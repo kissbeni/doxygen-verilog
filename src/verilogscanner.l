@@ -571,7 +571,7 @@ static void writeVWord(QCString &qcs)
       return;
     }
 
-    if (qcs.stripPrefix("/*!"))
+    if (qcs.stripPrefix("/*!") || qcs.stripPrefix("/**"))
     {
       if (stripComment)
       {
@@ -947,7 +947,7 @@ static void codifyLines(const char *text,char *cl,bool undoc)
 {
   // printf("codifyLines(%d,\"%d\")\n",yyLineNr,strlen(text));
   if (text==NULL) return;
-  const char *p=text;
+  char *p=(char*)text;
   const char *sp=p;
   char c;
   bool done=FALSE;
@@ -959,7 +959,7 @@ static void codifyLines(const char *text,char *cl,bool undoc)
     if (c=='\n')
     {
       yyLineNr++;
-      // *(p-1)='\0';
+      *(p-1)='\0';
       if (!undoc)
         writeWord(sp,cl);
       else
@@ -1763,7 +1763,8 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
   vbufreset();
   addText(verilogScanYYtext,verilogScanYYleng);
 
-  if(yy_hold_char=='!') // found  comment starting with "/*!"
+  // found comment starting with "/*!" or "/**"
+  if (yy_hold_char=='!' || yy_hold_char=='*')
     doxComment=true;
 
   startComment=yyLineNr;
@@ -1775,7 +1776,7 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
   if(c !='/')
   {
     parseToken(verilogScanYYtext);
-    return  ENV_TOK;
+    return ENV_TOK;
   }
 
   unput('/');// found "//"
@@ -1801,8 +1802,8 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
   }
 
   addText(tt.data(),len);
-  char c=yy_hold_char;
-  if (c =='/')
+
+  if (yy_hold_char=='/')
   {
     unput('*');
     BEGIN(Commentt);
@@ -1821,6 +1822,7 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
     if (doxComment)
     {
       qq->stripPrefix("/*!");
+      qq->stripPrefix("/**");
       *qq=qq->left(qq->length()-2);
       handleVerilogCommentBlock(*qq,FALSE,startComment);
     }

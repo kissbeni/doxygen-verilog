@@ -53,19 +53,18 @@
  *
  * This is the Verilog language parser for doxygen.
  */
-
 class VerilogScanner : public ParserInterface
 {
   public:
     virtual ~VerilogScanner() {}
     void startTranslationUnit(const char *) {}
     void finishTranslationUnit() {}
-    void parseInput(const char * fileName, 
-                    const char *fileBuf, 
+    void parseInput(const char *fileName,
+                    const char *fileBuf,
                     Entry *root,
                     bool sameTranslationUnit,
                     QStrList &filesInSameTranslationUnit);
-    bool needsPreprocessing(const QCString &){ return TRUE; }
+    bool needsPreprocessing(const QCString&) { return true; }
     void parseCode(CodeOutputInterface &codeOutIntf,
                    const char *scopeName,
                    const QCString &input,
@@ -79,14 +78,13 @@ class VerilogScanner : public ParserInterface
                    MemberDef *memberDef=0,
                    bool showLineNumbers=TRUE,
                    Definition *searchCtx=0,
-                   bool collectXRefs=TRUE
-                  );
-    void resetCodeParserState(){};
+                   bool collectXRefs=TRUE);
+    void resetCodeParserState() { };
     void parsePrototype(const char *text);
 };
 
 //------ wrapper functions for parsing code ---------------------------------
- 
+
 void codifyVerilogString(const char* c,const char* color=NULL);
 bool generateVerilogMemLink(QCString &clName,QCString& memberName,int type);
 bool generateVerilogClassOrGlobalLink(const char *clName);
@@ -109,7 +107,7 @@ void deleteVerilogChars(QCString &s,const char* c);
 void  vbufreset();
 
 // returns a pointer to the buffer in which the parsed strings are stored
-const char* getVerilogString();
+const char *getVerilogString();
 
 int getVerilogLine();
 
@@ -119,21 +117,21 @@ int getVerilogPrevLine();
 int getVerilogEndLine();
 
 // returns the last parsed token
-int getVerilogToken(); 
+int getVerilogToken();
 
 // returns the current parsing file
-const char* getVerilogParsingFile();
+const char *getVerilogParsingFile();
 
 // returns the last parsed letter
 QCString getLastLetter();
 
- // return the current Entry = (current module/primitive)
- Entry* getCurrVerilogEntry();
- 
- // returns the current Entry
- Entry* getCurrVerilog();
+// return the current Entry = (current module/primitive)
+Entry *getCurrVerilogEntry();
 
-void initVerilogParser(Entry* ee,bool pc);
+// returns the current Entry
+Entry *getCurrVerilog();
+
+void initVerilogParser(Entry *ee,bool pc);
 
 // function for parsing and assigning comments
 bool handleVerilogCommentBlock(const QCString &doc,bool brief,int iDocLine);
@@ -141,15 +139,15 @@ bool handleVerilogCommentBlock(const QCString &doc,bool brief,int iDocLine);
 // returns the current module name when code parsing
 QCString getCurrVerilogParsingClass();
 
-// finds global `define/`includes 
-MemberDef* findGlobalMember(const QCString& file, const QCString& memName);
+// finds global `define/`includes
+MemberDef* findGlobalMember(const QCString &file,const QCString &memName);
 
 // finds global `define/`includes
-MemberDef* findGlobalMember(const QCString& memName);
+MemberDef* findGlobalMember(const QCString &memName);
 
- void addGlobalVerilogMember(const Entry *e);
+void addGlobalVerilogMember(const Entry *e);
 
- void resetVerilogBrief();
+void resetVerilogBrief();
 int getVerilogEndModuleLine();
 
 #endif
