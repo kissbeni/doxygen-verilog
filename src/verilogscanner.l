@@ -530,7 +530,7 @@ static void writeVWord(QCString &qcs)
 {
   static bool stripComment=Config_getBool(STRIP_CODE_COMMENTS);
 
-  if(qcs.isEmpty()) return;
+  if (qcs.isEmpty()) return;
 
   QCString temp=qcs;
   if (qcs.stripPrefix("\n"))
@@ -547,106 +547,110 @@ static void writeVWord(QCString &qcs)
 
   if (qcs.stripPrefix("\""))
   {
-    writeFont("keyword",temp.data());return;}
-    if (qcs.stripPrefix("//"))
-    {
-      if (stripComment && temp.contains(vlogComment))
-      {
-        yyLineNr+=temp.contains("\n");
-        return;
-      }
+    writeFont("keyword",temp.data());
+    return;
+  }
 
-      writeFont("keyword",temp.data());
+  if (qcs.stripPrefix("//"))
+  {
+    if (stripComment && temp.contains(vlogComment))
+    {
+      yyLineNr+=temp.contains("\n");
       return;
     }
 
-    if (qcs.stripPrefix("§"))
-    {
-      deleteVerilogChars(qcs,"§");
-      deleteVerilogChars(qcs,"²");
+    writeFont("keyword",temp.data());
+    return;
+  }
 
-      startFontClass("undoc");
-      codifyLines(qcs.data(),0,true);
-      endFontClass();
+  if (qcs.stripPrefix("§"))
+  {
+    deleteVerilogChars(qcs,"§");
+    deleteVerilogChars(qcs,"²");
+
+    startFontClass("undoc");
+    codifyLines(qcs.data(),0,true);
+    endFontClass();
+    return;
+  }
+
+  if (qcs.stripPrefix("/*!") || qcs.stripPrefix("/**"))
+  {
+    if (stripComment)
+    {
+      yyLineNr+=temp.contains("\n");
+      return;
+    }
+  }
+  // else qcs.prepend("/*");
+
+  if (qcs.stripPrefix("/*"))
+  {
+    startFontClass("keyword");
+    codifyLines(temp.data());
+    endFontClass();
+    return;
+  }
+
+  if (qcs.stripPrefix("`"))
+  {
+    qcs=temp;
+    if (qcs.stripPrefix("`define"))
+    {
+      writeFont("preprocessor","`define");
+      writeInclude(qcs);
       return;
     }
 
-    if (qcs.stripPrefix("/*!") || qcs.stripPrefix("/**"))
+    if (qcs.stripPrefix("`include"))
     {
-      if (stripComment)
-      {
-        yyLineNr+=temp.contains("\n");
-        return;
-      }
-    } else qcs.prepend("/*");
-
-    if (qcs.stripPrefix("/*"))
-    {
-      startFontClass("keyword");
-      codifyLines(temp.data());
-      endFontClass();
+      writeFont("preprocessor","`include");
+      writeInclude(qcs);
       return;
     }
 
-    if (qcs.stripPrefix("`"))
-    {
-      qcs=temp;
-      if (qcs.stripPrefix("`define"))
-      {
-        writeFont("preprocessor","`define");
-        writeInclude(qcs);
-        return;
-      }
+    writeFont("preprocessor",qcs.data());
+    return;
+  }
 
-      if (qcs.stripPrefix("`include"))
-      {
-        writeFont("preprocessor","`include");
-        writeInclude(qcs);
-        return;
-      }
+  const QCString *ss=VerilogDocGen::findKeyWord(qcs.data());
+  if (ss)
+  {
+    writeFont(ss->data(),qcs.data());
+    return;
+  }
 
-      writeFont("preprocessor",qcs.data());
-      return;
-    }
+  MemberDef *md=findGlobalMember(temp);
+  if (md)
+  {
+    g_code->writeCodeLink(md->getReference(),
+                          md->getOutputFileBase(),
+                          md->anchor(),
+                          temp.data(),
+                          md->briefDescriptionAsTooltip());
+    return;
+  }
 
-    const QCString *ss=VerilogDocGen::findKeyWord(qcs.data());
-    if (ss)
-    {
-      writeFont(ss->data(),qcs.data());
-      return;
-    }
+  QCString tempClass=getCurrVerilogParsingClass();
+  bool feat=generateVerilogMemLink(tempClass,temp,VerilogDocGen::FEATURE);
 
-    MemberDef *md=findGlobalMember(temp);
-    if (md)
-    {
-      g_code->writeCodeLink(md->getReference(),
-                            md->getOutputFileBase(),
-                            md->anchor(),
-                            temp.data(),
-                            md->briefDescriptionAsTooltip());
-      return;
-    }
+  if (feat) return;
+  /*
+  if(!feat)
+  {
+    writeWord(qcs.data());
+    return;
+  }
+  */
 
-    QCString tempClass=getCurrVerilogParsingClass();
-    bool feat=generateVerilogMemLink(tempClass,temp,VerilogDocGen::FEATURE);
+  if (qcs.length()==1)
+  {
+    codifyLines(qcs.data());
+    return;
+  }
 
-    if (feat) return;
-    /*
-    if(!feat)
-    {
-      writeWord(qcs.data());
-      return;
-    }
-    */
-
-    if (qcs.length()==1)
-    {
-      codifyLines(qcs.data());
-      return;
-    }
-
-    if (qcs.stripPrefix("$")) writeFont("vhdlkeyword",temp.data());
-    else writeWord(temp.data());
+  if (qcs.stripPrefix("$")) writeFont("vhdlkeyword",temp.data());
+  else writeWord(temp.data());
 } // writeVWord
 
 // writes the rest of the input buffer
@@ -671,12 +675,23 @@ void writePrevVerilogWords(const QCString &qcs)
   {
     QCString *word=(QCString*)qlist.getFirst();
     // printf("\n++++++++++++++++++ %s",qcs.data());
-    // if(qcs.contains("`"))
+    // if (qcs.contains("`"))
     //   printVerilogStringList();
-    if(qcs != *word)
+
+    if (qcs!=*word)
     {
-      writeVWord(*word);
+      QCString cpy(*word);
       qlist.removeFirst();
+
+      // TODO: Find a better fix for the space that is generated before `include
+      if (qlist.count()>0)
+      {
+        QCString s(*qlist.getFirst());
+        if (s.stripPrefix("`include"))
+          continue;
+      }
+
+      writeVWord(cpy);
     }
     else
     {
@@ -1201,7 +1216,7 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
 }
 
 <EndOfText>[\\] {
-  if(g_parseCode)
+  if (g_parseCode)
   {
     char c=yy_hold_char;
     qlist.append(new QCString("\\"));
@@ -1494,8 +1509,8 @@ GATETYPE    "and"|"nand"|"or"|"nor"|"xor"|"xnor"|"buf"|"bufif0"|"bufif1"|"not"|"
       // QCString trial=(QCString)ql[0];
       qlist.append(new QCString(ql[0].data()));
       qlist.append(new QCString("\n"));
-      if(ql.count()>1)
-      qlist.append(new QCString(ql[1].data()));
+      if (ql.count()>1)
+        qlist.append(new QCString(ql[1].data()));
     }
   }
 
@@ -2354,7 +2369,7 @@ void composeString(QCString& q)
 
 static void writeInclude(QCString inc)
 {
-  if(inc.isEmpty())  return;
+  if (inc.isEmpty()) return;
   int i=inc.find("\"");
   int j=inc.findRev("\"");
 
